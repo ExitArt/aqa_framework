@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # 1. Автоматически обновляем экшены в GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly" # Проверять раз в неделю (можно заменить на daily)
+
+  # 2. Автоматически обновляем зависимости Maven (альтернативный/дополнительный способ через PR)
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
