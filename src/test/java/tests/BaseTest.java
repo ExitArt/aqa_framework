@@ -3,18 +3,25 @@ package tests;
 import com.microsoft.playwright.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
-import saucedemo.pages.LoginPage; // Импортируем наш Page Object
+import saucedemo.pages.LoginPage;
 import java.util.Collections;
 
 public class BaseTest {
-    protected Playwright playwright;
-    protected Browser browser;
-    protected BrowserContext context;
-    protected Page page;
+    // Используем ThreadLocal для изоляции ресурсов внутри каждого отдельного потока
+    private static final ThreadLocal<Playwright> playwrightThreadLocal = new ThreadLocal<>();
+    private static final ThreadLocal<Browser> browserThreadLocal = new ThreadLocal<>();
+    private final ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
+    private final ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>();
+
+    // Удобные геттеры, чтобы ваши классы-наследники (тесты) могли вызывать page без изменений кода
+    protected Page getPage() {
+        return pageThreadLocal.get();
+    }
 
     @BeforeEach
     void setUp() {
-        playwright = Playwright.create();
+        // Инициализируем Playwright для текущего потока
+        playwrightThreadLocal.set(Playwright.create());
 
         String browserParam = System.getProperty("chosen.browser", "chromium");
         String headlessParam = System.getProperty("chosen.headless", "true");
@@ -28,37 +35,54 @@ public class BaseTest {
                 .setHeadless(isHeadless)
                 .setArgs(Collections.singletonList("--no-sandbox"));
 
+        // Инициализируем Browser для текущего потока
         if ("firefox".equalsIgnoreCase(browserParam)) {
-            browser = playwright.firefox().launch(options);
+            browserThreadLocal.set(playwrightThreadLocal.get().firefox().launch(options));
         } else {
-            browser = playwright.chromium().launch(options);
+            browserThreadLocal.set(playwrightThreadLocal.get().chromium().launch(options));
         }
 
-        context = browser.newContext();
-        page = context.newPage();
-        page.setDefaultTimeout(15000);
+        // Инициализируем контекст и страницу для текущего потока
+        contextThreadLocal.set(browserThreadLocal.get().newContext());
+        pageThreadLocal.set(contextThreadLocal.get().newPage());
+
+        // Увеличим дефолтный таймаут до 30 секунд, чтобы нивелировать тормоза серверов GitHub Actions
+        getPage().setDefaultTimeout(30000);
 
         String usernameParam = System.getProperty("test.username", "standard_user");
         String passwordParam = System.getProperty("test.password", "secret_sauce");
 
         // --- РЕФАКТОРИНГ ПО POM ---
-        LoginPage loginPage = new LoginPage(page);
+        LoginPage loginPage = new LoginPage(getPage());
         loginPage.navigate(); // Открываем сайт
-        loginPage.login(usernameParam, passwordParam); // Логинимся через метод класса страницы
+        loginPage.login(usernameParam, passwordParam); // Логинимся
 
         try {
-            page.waitForURL("**/inventory.html", new Page.WaitForURLOptions().setTimeout(5000));
+            getPage().waitForURL("**/inventory.html", new Page.WaitForURLOptions().setTimeout(10000));
         } catch (PlaywrightException e) {
-            System.err.println("ОШИБКА: Не удалось авторизоваться в потоке " + Thread.currentThread().getName() + "! Текущий URL: " + page.url());
+            System.err.println("ОШИБКА: Не удалось авторизоваться в потоке " + Thread.currentThread().getName() + "! Текущий URL: " + getPage().url());
             throw e;
         }
     }
 
     @AfterEach
     void tearDown() {
-        if (page != null) page.close();
-        if (context != null) context.close();
-        if (browser != null) browser.close();
-        if (playwright != null) playwright.close();
+        // Закрываем все ресурсы строго в обратном порядке и чистим ThreadLocal для предотвращения утечек памяти
+        if (pageThreadLocal.get() != null) {
+            pageThreadLocal.get().close();
+            pageThreadLocal.remove();
+        }
+        if (contextThreadLocal.get() != null) {
+            contextThreadLocal.get().close();
+            contextThreadLocal.remove();
+        }
+        if (browserThreadLocal.get() != null) {
+            browserThreadLocal.get().close();
+            browserThreadLocal.remove();
+        }
+        if (playwrightThreadLocal.get() != null) {
+            playwrightThreadLocal.get().close();
+            playwrightThreadLocal.remove();
+        }
     }
 }

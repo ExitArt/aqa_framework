@@ -10,7 +10,7 @@ public class LoginUserTest extends BaseTest {
     public void AllUsersAuthorization(){
         // Вызываем авторизацию (предположим, логин происходит в BaseTest)
         // Инициализируем Page Object для страницы продуктов
-        ProductsPage productsPage = new ProductsPage(page);
+        ProductsPage productsPage = new ProductsPage(getPage());
 
         // Чистые проверки без локаторов внутри теста!
         assertThat(productsPage.getLogo()).hasText("Swag Labs");
