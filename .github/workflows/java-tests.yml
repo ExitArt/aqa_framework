@@ -1,11 +1,9 @@
 name: Java Playwright UI Tests (SauceDemo)
+
 on:
   push:
-  # Пайплайн запускается при пуше в вообще любую ветку
   pull_request:
-  # Пайплайн проверяет пулл-реквесты из любых веток
   workflow_dispatch:
-    # Кнопка ручного запуска в интерфейсе GitHub доступна всегда
     inputs:
       browser:
         description: 'Выберите браузер'
@@ -15,7 +13,6 @@ on:
         options:
           - chromium
           - firefox
-
       headless:
         description: 'Запустить в скрытом режиме (Headless)?'
         required: true
@@ -24,13 +21,11 @@ on:
         options:
           - 'true'
           - 'false'
-
       test_tags:
         description: 'Фильтр тестов (Имя класса или паттерн. Пусто = ВСЕ. Примеры: LoginTest, *Smoke*)'
         required: false
         default: ''
         type: string
-
       username:
         description: 'Имя пользователя (Login)'
         required: true
@@ -43,7 +38,6 @@ on:
           - 'performance_glitch_user'
           - 'error_user'
           - 'visual_user'
-
       password:
         description: 'Пароль (Password)'
         required: true
@@ -60,16 +54,16 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Запускаем все шаги внутри готового контейнера Playwright.
+    # Внимание: если у вас в pom.xml версия Playwright отличается (например, 1.45.0),
+    # замените тег v1.49.0 на вашу версию, чтобы они идеально совпадали.
+    container: ://microsoft.com
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 23
-        uses: actions/setup-java@v4
-        with:
-          java-version: '23'
-          distribution: 'oracle'
-          cache: 'maven'
+      # Шаг Set up JDK 23 внутри контейнера больше не нужен — в контейнере Microsoft уже установлена нужная Java!
 
       - name: Build Project and Download Dependencies
         run: mvn test-compile -B -ntp
@@ -77,19 +71,17 @@ jobs:
       - name: Install Playwright Browsers
         run: mvn exec:java -q -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install"
 
-      - name: Install Playwright Operating System Dependencies
-        run: mvn exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install-deps"
+      # ЭТАП `install-deps` ПОЛНОСТЬЮ УДАЛЕН, ТАК КАК ВСЕ БИБЛИОТЕКИ УЖЕ ЕСТЬ В КОНТЕЙНЕРЕ
 
       - name: Run Tests with Maven
         run: |
           mvn test -B -ntp \
-          -Dchosen.browser="${{ github.event.inputs.browser || 'chromium' }}" \
-          -Dchosen.headless="${{ github.event.inputs.headless || 'true' }}" \
-          -Dtest.username="${{ github.event.inputs.username || 'standard_user' }}" \
-          -Dtest.password="${{ github.event.inputs.password || 'secret_sauce' }}" \
-          ${{ github.event.inputs.test_tags != '' && format('-Dtest="{0}"', github.event.inputs.test_tags) || '' }}
+          -Dchosen.browser="\${{ github.event.inputs.browser || 'chromium' }}" \
+          -Dchosen.headless="\${{ github.event.inputs.headless || 'true' }}" \
+          -Dtest.username="\${{ github.event.inputs.username || 'standard_user' }}" \
+          -Dtest.password="\${{ github.event.inputs.password || 'secret_sauce' }}" \
+          \${{ github.event.inputs.test_tags != '' && format('-Dtest="{0}"', github.event.inputs.test_tags) || '' }}
 
-      # Сохраняем логи и сырые результаты тестов в артефакты GitHub ВСЕГДА
       - name: Upload Test Report Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -106,27 +98,31 @@ jobs:
           detailed_summary: true
           include_passed: true
 
-      # --- НИЖЕ ЛОГИКА ОГРАНИЧЕНИЯ ДЛЯ ВЕТКИ MAIN ---
+      # --- ЛОГИКА ALLURE ---
 
-      # Скачиваем историю прошлых запусков ТОЛЬКО для main branch
       - name: Get Allure history
         uses: actions/checkout@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         continue-on-error: true
         with:
           ref: gh-pages
-          path: target/allure-results/history
+          path: allure-history-temp # Скачиваем во временную папку, чтобы Гит не ругался на структуру проекта
 
-      # Собираем Allure отчет в готовый сайт ТОЛЬКО для main branch
+      # Переносим историю на нужное место, только если папка скачалась
+      - name: Prepare Allure history folder
+        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        run: |
+          mkdir -p target/allure-results/history
+          [ -d "allure-history-temp" ] && cp -r allure-history-temp/* target/allure-results/history/ || echo "No history found"
+
       - name: Generate Allure Report via Maven
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        run: mvn allure:report -Dallure.install.dir=${{ github.workspace }}/.allure || true
+        run: mvn allure:report -Dallure.install.dir=\${{ github.workspace }}/.allure || true
 
-      # Публикуем сайт на GitHub Pages ТОЛЬКО для main branch
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: \${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: target/site/allure-maven-plugin
