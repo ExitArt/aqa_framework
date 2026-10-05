@@ -1,0 +1,5 @@
+"Status","Start Time","Stop Time","Duration in ms","Parent Suite","Suite","Sub Suite","Test Class","Test Method","Name","Description"
+"passed","Mon Oct 05 14:29:35 UTC 2026","Mon Oct 05 14:29:39 UTC 2026","3678","","tests.CheckUniqProductsTest","","tests.CheckUniqProductsTest","checkUniq","checkUniq()",""
+"passed","Mon Oct 05 14:29:35 UTC 2026","Mon Oct 05 14:29:39 UTC 2026","3558","","tests.InventoryTest","","tests.InventoryTest","shouldHaveItemsInStore","shouldHaveItemsInStore()",""
+"passed","Mon Oct 05 14:29:35 UTC 2026","Mon Oct 05 14:29:39 UTC 2026","3561","","tests.LoginUserTest","","tests.LoginUserTest","AllUsersAuthorization","AllUsersAuthorization()",""
+"passed","Mon Oct 05 14:29:35 UTC 2026","Mon Oct 05 14:29:39 UTC 2026","3876","","tests.AddToCartTest","","tests.AddToCartTest","testSuccessAddToCart","testSuccessAddToCart()",""
