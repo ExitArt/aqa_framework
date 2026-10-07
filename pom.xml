@@ -106,7 +106,7 @@
                 </configuration>
             </plugin>
 
-            <!-- ПОЧИНЕНО: Плагин автоматически находит путь к aspectjweaver и регистрирует системную переменную во время сборки -->
+            <!-- Плагин автоматически находит путь к aspectjweaver и регистрирует переменную пути во время сборки -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -128,9 +128,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
                 <configuration>
-                    <!-- ПОЧИНЕНО: Используем динамическое раскрытие argLine, синтаксис корректен для локального запуска и консоли Linux в CI -->
+                    <!-- ИСПРАВЛЕНО: Убран @{argLine}. Оставляем только автоматическую переменную пути к JAR-файлу -->
                     <argLine>
-                        -javaagent:"${org.aspectj:aspectjweaver:jar}" @{argLine}
+                        -javaagent:"${org.aspectj:aspectjweaver:jar}"
                     </argLine>
                     <systemPropertyVariables>
                         <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
