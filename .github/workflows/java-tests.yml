@@ -60,6 +60,23 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    # ПОЧИНЕНО: Поднимаем чистую официальную Kafka 3.7.0 (KRaft) в контейнере GitHub Actions
+    services:
+      kafka:
+        image: apache/kafka:3.7.0
+        ports:
+          - 9092:9092
+        env:
+          KAFKA_NODE_ID: 1
+          KAFKA_PROCESS_ROLES: broker,controller
+          KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+          KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+          KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+          KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -79,6 +96,10 @@ jobs:
 
       - name: Install Playwright Operating System Dependencies
         run: mvn exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install-deps"
+
+      # ПОЧИНЕНО: Даем облачной Кафке 3 секунды, чтобы полностью инициализировать метаданные и порты
+      - name: Wait for Kafka to be ready
+        run: sleep 3
 
       - name: Run Tests with Maven
         run: |

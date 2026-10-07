@@ -33,18 +33,10 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- API для написания тестов JUnit 5 (Стабильная версия) -->
+        <!-- Единый агрегатор JUnit 5 (включает в себя и API, и Engine) -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>5.11.4</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Движок запуска JUnit 5 -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
+            <artifactId>junit-jupiter</artifactId>
             <version>5.11.4</version>
             <scope>test</scope>
         </dependency>
@@ -56,7 +48,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Убираем варнинг SLF4J, добавляя легковесный провайдер логов -->
+        <!-- Логгер для убирания варнингов SLF4J -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
@@ -85,6 +77,20 @@
             <version>26.0.1</version>
             <scope>compile</scope>
         </dependency>
+
+        <!-- Официальный клиент Kafka для Java -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>3.8.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>${aspectj.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -106,8 +112,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
                 <configuration>
+                    <!-- ПОЧИНЕНО: Передаем чистый системный путь к JAR агента без капризных путей репозитория -->
                     <argLine>
-                        -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+                        -javaagent:${org.aspectj:aspectjweaver:jar}
                     </argLine>
                     <systemPropertyVariables>
                         <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
@@ -120,7 +127,7 @@
                         <artifactId>junit-platform-launcher</artifactId>
                         <version>1.11.4</version>
                     </dependency>
-                    <!-- Раскомментировано: необходим для корректной работы Allure перехватчиков -->
+                    <!-- Фиксируем чистую зависимость агента внутри плагина -->
                     <dependency>
                         <groupId>org.aspectj</groupId>
                         <artifactId>aspectjweaver</artifactId>
