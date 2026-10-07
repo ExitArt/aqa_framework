@@ -106,15 +106,31 @@
                 </configuration>
             </plugin>
 
+            <!-- ПОЧИНЕНО: Плагин автоматически находит путь к aspectjweaver и регистрирует системную переменную во время сборки -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>get-aspectjweaver</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- Плагин Surefire для запуска тестов -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
                 <configuration>
-                    <!-- ПОЧИНЕНО: Передаем чистый системный путь к JAR агента без капризных путей репозитория -->
+                    <!-- ПОЧИНЕНО: Используем динамическое раскрытие argLine, синтаксис корректен для локального запуска и консоли Linux в CI -->
                     <argLine>
-                        -javaagent:${org.aspectj:aspectjweaver:jar}
+                        -javaagent:"${org.aspectj:aspectjweaver:jar}" @{argLine}
                     </argLine>
                     <systemPropertyVariables>
                         <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
@@ -126,12 +142,6 @@
                         <groupId>org.junit.platform</groupId>
                         <artifactId>junit-platform-launcher</artifactId>
                         <version>1.11.4</version>
-                    </dependency>
-                    <!-- Фиксируем чистую зависимость агента внутри плагина -->
-                    <dependency>
-                        <groupId>org.aspectj</groupId>
-                        <artifactId>aspectjweaver</artifactId>
-                        <version>${aspectj.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>
