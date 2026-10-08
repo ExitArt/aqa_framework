@@ -1,42 +1,33 @@
 package tests;
 
+import models.OrderDto;
 import org.junit.jupiter.api.Test;
-import utils.KafkaProducerUtils;
-import utils.KafkaUtils;
+import steps.KafkaSteps;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class KafkaIntegrationTest {
 
+    private final KafkaSteps kafka = new KafkaSteps();
+    private final String topic = "orders-topic";
+
     @Test
-    public void testSendAndReceiveMessage() {
-        String bootstrapServers = "localhost:9092";
-        String topic = "orders-topic";
+    public void testSendAndReceiveMessage() throws Exception {
+        // 1. Готовим тестовые данные через DTO
+        OrderDto expectedOrder = new OrderDto("standard_user", "SUCCESS", "12345");
 
-        // 1. Имитируем работу бэкенда: отправляем сообщение в Kafka
-        KafkaProducerUtils producer = new KafkaProducerUtils(bootstrapServers);
-        String testJson = "{\"user\": \"standard_user\", \"status\": \"SUCCESS\", \"orderId\": \"12345\"}";
+        // 2. Имитируем работу бэкенда: отправляем объект
+        kafka.sendOrder(topic, expectedOrder);
 
-        producer.sendMessage(topic, "order_key", testJson);
-        producer.close();
+        // 3. Имитируем работу нашего теста: стабильно ждем и забираем объект
+        OrderDto actualOrder = kafka.waitForLatestOrder(topic);
 
-        // 2. Имитируем работу нашего теста: читаем это сообщение из Kafka
-        // Используем фиксированную группу для моментального отклика сети
-        KafkaUtils consumer = new KafkaUtils(bootstrapServers, "aqa_static_group");
+        // 4. Делаем строгие проверки (Assertions) объект в объект
+        assertNotNull(actualOrder, "Ошибка: Заказ не был прочитан из Kafka!");
+        assertEquals(expectedOrder.getUser(), actualOrder.getUser(), "Ошибка: Неверный user!");
+        assertEquals(expectedOrder.getOrderId(), actualOrder.getOrderId(), "Ошибка: Неверный orderId!");
+        assertEquals(expectedOrder.getStatus(), actualOrder.getStatus(), "Ошибка: Неверный status!");
 
-        try {
-            String receivedMessage = consumer.getLastMessageFromTopic(topic);
-            System.out.println("<<< Тест прочитал из Kafka: " + receivedMessage);
-
-            // 3. Делаем проверки (Assertions)
-            assertNotNull(receivedMessage, "Ошибка: Сообщение не было прочитано из Kafka (вернулся null)!");
-            assertTrue(receivedMessage.contains("standard_user"), "Ошибка: В сообщении нет имени пользователя!");
-            assertTrue(receivedMessage.contains("12345"), "Ошибка: В сообщении нет правильного orderId!");
-
-            System.out.println("🔥 ИНТЕГРАЦИЯ С KAFKA НА ЛОКАЛКЕ ПОЛНОСТЬСТЬЮ РАБОТАЕТ!");
-        } finally {
-            consumer.close();
-        }
+        System.out.println("🔥 ИНТЕГРАЦИЯ С KAFKA ПОЛНОСТЬЮ СТАБИЛЬНА И РАБОТАЕТ!");
     }
 }
