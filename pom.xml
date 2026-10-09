@@ -13,10 +13,12 @@
         <maven.compiler.target>23</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Версии Allure скорректированы для стабильной работы на Java 23 -->
+        <!-- Синхронизированные версии Allure и движка тестирования -->
         <allure.version>2.29.0</allure.version>
         <allure-maven.version>2.12.0</allure-maven.version>
         <aspectj.version>1.9.22.1</aspectj.version>
+        <junit.version>5.12.0</junit.version>
+        <junit.launcher.version>1.12.0</junit.launcher.version>
     </properties>
 
     <!-- Управление версиями Allure через BOM -->
@@ -33,19 +35,25 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Единый агрегатор JUnit 5 (включает в себя и API, и Engine) -->
+        <!-- Движок тестирования (Без scope test, чтобы AssertSteps.java в src/main/java видел JUnit) -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.11.4</version>
+            <version>${junit.version}</version>
+        </dependency>
+
+        <!-- Принудительный лаунчер платформы (Устраняет ошибку OutputDirectoryProvider в IntelliJ IDEA) -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <version>${junit.launcher.version}</version>
             <scope>test</scope>
         </dependency>
 
-        <!-- Адаптер Allure для JUnit 5 -->
+        <!-- Адаптер Allure для JUnit 5 (Без scope test для видимости аннотаций в src/main/java) -->
         <dependency>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-junit5</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <!-- Логгер для убирания варнингов SLF4J -->
@@ -56,35 +64,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Playwright для автоматизации -->
-        <dependency>
-            <groupId>com.microsoft.playwright</groupId>
-            <artifactId>playwright</artifactId>
-            <version>1.49.0</version>
-        </dependency>
-
-        <!-- Обновленный Selenide -->
-        <dependency>
-            <groupId>com.codeborne</groupId>
-            <artifactId>selenide</artifactId>
-            <version>7.18.0</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jetbrains</groupId>
-            <artifactId>annotations</artifactId>
-            <version>26.0.1</version>
-            <scope>compile</scope>
-        </dependency>
-
-        <!-- Официальный клиент Kafka для Java -->
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-clients</artifactId>
-            <version>3.8.0</version>
-        </dependency>
-
+        <!-- Аспект-вейвер для сбора шагов Allure -->
         <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
@@ -92,20 +72,37 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Для работы с JSON -->
+        <!-- Автоматизация UI (Playwright) -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>1.49.0</version>
+        </dependency>
+
+        <!-- Системные аннотации -->
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>26.0.1</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Очереди сообщений, JSON и Ожидания (Без scope test, чтобы виделись в src/main/java) -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>3.8.0</version>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.17.2</version>
         </dependency>
-
-        <!-- Для умных ожиданий в тестах -->
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
             <version>4.2.2</version>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -121,7 +118,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Плагин автоматически находит путь к aspectjweaver и регистрирует переменную пути во время сборки -->
+            <!-- Поиск пути к aspectjweaver JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -143,7 +140,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
                 <configuration>
-                    <!-- ИСПРАВЛЕНО: Убран @{argLine}. Оставляем только автоматическую переменную пути к JAR-файлу -->
                     <argLine>
                         -javaagent:"${org.aspectj:aspectjweaver:jar}"
                     </argLine>
@@ -152,11 +148,10 @@
                     </systemPropertyVariables>
                 </configuration>
                 <dependencies>
-                    <!-- Явный лаунчер платформы для совместимости с Java 23 -->
                     <dependency>
                         <groupId>org.junit.platform</groupId>
                         <artifactId>junit-platform-launcher</artifactId>
-                        <version>1.11.4</version>
+                        <version>${junit.launcher.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>
