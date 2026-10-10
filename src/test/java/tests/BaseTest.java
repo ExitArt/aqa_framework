@@ -36,18 +36,21 @@ public class BaseTest {
 
         context = browser.newContext();
         page = context.newPage();
-        page.setDefaultTimeout(15000);
+
+        // Увеличиваем до безопасных 30 секунд (стандарт Playwright), чтобы тесты не падали при лагах сети
+        page.setDefaultTimeout(30000);
 
         String usernameParam = System.getProperty("test.username", "standard_user");
         String passwordParam = System.getProperty("test.password", "secret_sauce");
 
         // --- РЕФАКТОРИНГ ПО POM ---
         LoginPage loginPage = new LoginPage(page);
-        loginPage.navigate(); // Открываем сайт
+        loginPage.navigate(); // Открываем сайт (теперь здесь работает быстрый LOAD)
         loginPage.login(usernameParam, passwordParam); // Логинимся через метод класса страницы
 
         try {
-            page.waitForURL("**/inventory.html", new Page.WaitForURLOptions().setTimeout(5000));
+            // Увеличиваем таймаут ожидания перехода до 10 секунд на случай долгого ответа фронтенда
+            page.waitForURL("**/inventory.html", new Page.WaitForURLOptions().setTimeout(10000));
         } catch (PlaywrightException e) {
             System.err.println("ОШИБКА: Не удалось авторизоваться в потоке " + Thread.currentThread().getName() + "! Текущий URL: " + page.url());
             throw e;
