@@ -32,9 +32,9 @@ public class KafkaSteps {
 
     @Step("Дождаться появления и прочитать новое сообщение из топика: {topic}")
     public OrderDto waitForLatestOrder(String topic) {
-        String rawJson = getLatestMessageWithAwait(topic);
+        // Передаем уникальную группу именно для этого шага
+        String rawJson = getLatestMessageWithAwait(topic, "aqa_orders_group");
 
-        // Переносим условия из аспекта в безопасную Java-логику
         if (rawJson == null) {
             rawJson = "{\n  \"error\": \"Сообщение пустое (null)\"\n}";
         }
@@ -60,7 +60,8 @@ public class KafkaSteps {
 
     @Step("Дождаться E2E события из топика Kafka: {topic}")
     public E2eOrderDto waitForLatestE2eOrder(String topic) {
-        String rawJson = getLatestMessageWithAwait(topic);
+        // Передаем уникальную группу именно для E2E шага
+        String rawJson = getLatestMessageWithAwait(topic, "aqa_e2e_group");
 
         if (rawJson == null) {
             rawJson = "{\n  \"error\": \"Сообщение пустое (null)\"\n}";
@@ -74,8 +75,9 @@ public class KafkaSteps {
         }
     }
 
-    private String getLatestMessageWithAwait(String topic) {
-        KafkaUtils consumer = new KafkaUtils(bootstrapServers, "aqa_static_group");
+    // Добавили параметр String groupId, чтобы разделить потоки чтения
+    private String getLatestMessageWithAwait(String topic, String groupId) {
+        KafkaUtils consumer = new KafkaUtils(bootstrapServers, groupId);
 
         try {
             return await()
@@ -90,7 +92,6 @@ public class KafkaSteps {
         }
     }
 
-    // ИСПРАВЛЕНО ДЛЯ JAVA 23: Чистый метод вложения без условий и логических ветвлений
     @Attachment(value = "{attachmentName}", type = "application/json")
     private String attachJsonToAllure(String attachmentName, String json) {
         return json;
