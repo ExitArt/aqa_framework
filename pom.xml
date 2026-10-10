@@ -13,7 +13,7 @@
         <maven.compiler.target>23</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Синхронизированные версии Allure и движка тестирования -->
+        <!-- Синхронизированные версии Allure и движка тестирования для Java 23 -->
         <allure.version>2.29.0</allure.version>
         <allure-maven.version>2.12.0</allure-maven.version>
         <aspectj.version>1.9.24</aspectj.version>
@@ -35,14 +35,12 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Движок тестирования (Без scope test, чтобы AssertSteps.java в src/main/java видел JUnit) -->
+        <!-- Движок тестирования и Принудительный лаунчер (Решает проблему OutputDirectoryProvider в IDEA) -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${junit.version}</version>
         </dependency>
-
-        <!-- Принудительный лаунчер платформы (Устраняет ошибку OutputDirectoryProvider в IntelliJ IDEA) -->
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-launcher</artifactId>
@@ -50,7 +48,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Адаптер Allure для JUnit 5 (Без scope test для видимости аннотаций в src/main/java) -->
+        <!-- Адаптер Allure для JUnit 5 -->
         <dependency>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-junit5</artifactId>
@@ -87,7 +85,7 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- Очереди сообщений, JSON и Ожидания (Без scope test, чтобы виделись в src/main/java) -->
+        <!-- Очереди сообщений, JSON и Ожидания -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
@@ -140,8 +138,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
                 <configuration>
+                    <!-- ФЛАГ УДАЛЕН: Оставлен только чистый запуск агента -->
                     <argLine>
-                        -javaagent:"${org.aspectj:aspectjweaver:jar}" -XX:-UseSplitVerifier
+                        -javaagent:"${org.aspectj:aspectjweaver:jar}"
                     </argLine>
                     <systemPropertyVariables>
                         <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
