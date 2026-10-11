@@ -19,7 +19,7 @@ public class FullStackE2eTest extends BaseTest {
 
     private final KafkaSteps kafka = new KafkaSteps();
     private final AssertSteps verify = new AssertSteps();
-    private final String kafkaTopic = "orders-topic";
+    private final String kafkaTopic = "e2e-orders-topic";
 
     @Test
     @Story("Покупка товара на UI и отправка аналитического события в очередь брокера")
