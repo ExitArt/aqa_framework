@@ -36,9 +36,9 @@ public class BaseTest {
 
         Browser browser;
         if ("firefox".equalsIgnoreCase(browserParam)) {
-            browser = playwright.firefox().launch(options);
+            browserThreadLocal.set(playwrightThreadLocal.get().firefox().launch(options));
         } else {
-            browser = playwright.chromium().launch(options);
+            browserThreadLocal.set(playwrightThreadLocal.get().chromium().launch(options));
         }
         browserThreadLocal.set(browser);
 

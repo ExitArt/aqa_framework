@@ -8,7 +8,7 @@ public class InventoryTest extends BaseTest {
 
     @Test
     public void shouldHaveItemsInStore() {
-        ProductsPage productsPage = new ProductsPage(page);
+        ProductsPage productsPage = new ProductsPage(getPage());
 
         // Мы заранее знаем требования бизнеса: на SauceDemo ВСЕГДА должно быть 6 товаров
         int expectedItemsCount = 6;

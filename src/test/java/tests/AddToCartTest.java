@@ -11,8 +11,9 @@ public class AddToCartTest extends BaseTest { // Наследуемся от б�
 
     @Test
     public void testSuccessAddToCart() {
-        // Инициализируем страницу продуктов, передавая page из BaseTest
-        ProductsPage productsPage = new ProductsPage(page);
+        // КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: Передаем getPage() вместо старого page.
+        // Теперь этот поток получит именно свою изолированную страницу.
+        ProductsPage productsPage = new ProductsPage(getPage());
 
         int totalButtonsExpected = productsPage.getAddToCartButtonsCount();
         System.out.println("Найдено кнопок для нажатия: " + totalButtonsExpected);
@@ -23,7 +24,7 @@ public class AddToCartTest extends BaseTest { // Наследуемся от б�
         // Проверяем состояние кнопок
         List<Locator> removeButtonsList = productsPage.getAllRemoveButtons();
         for (Locator button : removeButtonsList) {
-            // Использование динамического ассерта Playwright (без waitForTimeout костылей)
+            // Использование динамического ассерта Playwright
             assertThat(button).hasAttribute("class", java.util.regex.Pattern.compile(".*btn_secondary.*"));
         }
 

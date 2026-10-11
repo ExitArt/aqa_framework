@@ -14,7 +14,7 @@ public class CheckUniqProductsTest extends BaseTest {
     @Test
     void checkUniq() {
         // Инициализируем Page Object
-        ProductsPage productsPage = new ProductsPage(page);
+        ProductsPage productsPage = new ProductsPage(getPage());
 
         // 1. Ожидаем появление элементов с помощью умных ассертов Playwright
         assertThat(productsPage.getProductNamesLocator()).hasCount(6);
