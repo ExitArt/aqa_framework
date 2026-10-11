@@ -108,6 +108,14 @@
             <artifactId>awaitility</artifactId>
             <version>4.2.2</version>
         </dependency>
+
+        <!-- Datafaker для генерации случайных тестовых данных -->
+        <dependency>
+            <groupId>net.datafaker</groupId>
+            <artifactId>datafaker</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -170,6 +178,8 @@
                 <configuration>
                     <reportVersion>${allure.version}</reportVersion>
                     <resultsDirectory>${project.build.directory}/allure-results</resultsDirectory>
+                    <!-- ДОБАВЛЯЕМ СЮДА: Скачивание движка напрямую со стабильного зеркала GitHub -->
+                    <allureDownloadUrl>https://github.com</allureDownloadUrl>
                 </configuration>
             </plugin>
         </plugins>
