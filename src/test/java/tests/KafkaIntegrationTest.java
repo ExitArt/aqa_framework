@@ -1,42 +1,41 @@
 package tests;
 
+import io.qameta.allure.*;
+import models.OrderDto;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import utils.KafkaProducerUtils;
-import utils.KafkaUtils;
+import steps.AssertSteps;
+import steps.KafkaSteps;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
+@Epic("Интеграция с бэкенд-сервисами")
+@Feature("Очереди сообщений (Kafka)")
+@DisplayName("Интеграционные тесты для топика обработки заказов")
 public class KafkaIntegrationTest {
 
+    private final KafkaSteps kafka = new KafkaSteps();
+    private final AssertSteps verify = new AssertSteps(); // Подключаем шаги проверок
+    private final String topic = "orders-topic";
+
     @Test
-    public void testSendAndReceiveMessage() {
-        String bootstrapServers = "localhost:9092";
-        String topic = "orders-topic";
+    @Story("Успешный цикл отправки и десериализации одиночного заказа")
+    @Severity(SeverityLevel.BLOCKER)
+    @Description("Тест проверяет, что объект заказа корректно сериализуется бэкендом, улетает в брокер и без искажений вычитывается нашим консьюмером")
+    @DisplayName("Проверка отправки заказа в Kafka и его валидация")
+    public void testSendAndReceiveMessage() throws Exception {
+        // 1. Готовим тестовые данные через DTO
+        OrderDto expectedOrder = new OrderDto("standard_user", "SUCCESS", "12345");
 
-        // 1. Имитируем работу бэкенда: отправляем сообщение в Kafka
-        KafkaProducerUtils producer = new KafkaProducerUtils(bootstrapServers);
-        String testJson = "{\"user\": \"standard_user\", \"status\": \"SUCCESS\", \"orderId\": \"12345\"}";
+        // 2. Имитируем работу бэкенда: отправляем объект
+        kafka.sendOrder(topic, expectedOrder);
 
-        producer.sendMessage(topic, "order_key", testJson);
-        producer.close();
+        // 3. Имитируем работу нашего теста: стабильно ждем и забираем объект
+        OrderDto actualOrder = kafka.waitForLatestOrder(topic);
 
-        // 2. Имитируем работу нашего теста: читаем это сообщение из Kafka
-        // Используем фиксированную группу для моментального отклика сети
-        KafkaUtils consumer = new KafkaUtils(bootstrapServers, "aqa_static_group");
+        // 4. Делаем строгие проверки (Assertions) через класс шагов
+        verify.assertOrderDetails(expectedOrder, actualOrder);
 
-        try {
-            String receivedMessage = consumer.getLastMessageFromTopic(topic);
-            System.out.println("<<< Тест прочитал из Kafka: " + receivedMessage);
-
-            // 3. Делаем проверки (Assertions)
-            assertNotNull(receivedMessage, "Ошибка: Сообщение не было прочитано из Kafka (вернулся null)!");
-            assertTrue(receivedMessage.contains("standard_user"), "Ошибка: В сообщении нет имени пользователя!");
-            assertTrue(receivedMessage.contains("12345"), "Ошибка: В сообщении нет правильного orderId!");
-
-            System.out.println("🔥 ИНТЕГРАЦИЯ С KAFKA НА ЛОКАЛКЕ ПОЛНОСТЬСТЬЮ РАБОТАЕТ!");
-        } finally {
-            consumer.close();
-        }
+        System.out.println("🔥 ИНТЕГРАЦИЯ С KAFKA ПОЛНОСТЬЮ СТАБИЛЬНА И РАБОТАЕТ!");
     }
 }

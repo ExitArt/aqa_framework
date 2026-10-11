@@ -46,7 +46,7 @@ public class KafkaUtils {
         String lastValue = null;
 
         // Срезаем таймаут опроса до минимума — 50мс локально хватит за глаза
-        ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(50));
+        ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(150));
 
         if (records != null && !records.isEmpty()) {
             for (ConsumerRecord<String, String> record : records) {

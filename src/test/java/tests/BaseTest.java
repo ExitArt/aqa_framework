@@ -7,21 +7,20 @@ import saucedemo.pages.LoginPage;
 import java.util.Collections;
 
 public class BaseTest {
-    // Используем ThreadLocal для изоляции ресурсов внутри каждого отдельного потока
+    // Переводим менеджеры Playwright и Browser в потокобезопасные контейнеры ThreadLocal
     private static final ThreadLocal<Playwright> playwrightThreadLocal = new ThreadLocal<>();
     private static final ThreadLocal<Browser> browserThreadLocal = new ThreadLocal<>();
-    private final ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
-    private final ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>();
+    private static final ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
+    private static final ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>();
 
-    // Удобные геттеры, чтобы ваши классы-наследники (тесты) могли вызывать page без изменений кода
-    protected Page getPage() {
-        return pageThreadLocal.get();
-    }
+    // Удобные геттеры, чтобы тесты могли обращаться к page напрямую, как и раньше
+    protected Page page;
 
     @BeforeEach
     void setUp() {
-        // Инициализируем Playwright для текущего потока
-        playwrightThreadLocal.set(Playwright.create());
+        // Инициализируем Playwright строго для текущего потока
+        Playwright playwright = Playwright.create();
+        playwrightThreadLocal.set(playwright);
 
         String browserParam = System.getProperty("chosen.browser", "chromium");
         String headlessParam = System.getProperty("chosen.headless", "true");
@@ -35,54 +34,60 @@ public class BaseTest {
                 .setHeadless(isHeadless)
                 .setArgs(Collections.singletonList("--no-sandbox"));
 
-        // Инициализируем Browser для текущего потока
+        Browser browser;
         if ("firefox".equalsIgnoreCase(browserParam)) {
             browserThreadLocal.set(playwrightThreadLocal.get().firefox().launch(options));
         } else {
             browserThreadLocal.set(playwrightThreadLocal.get().chromium().launch(options));
         }
+        browserThreadLocal.set(browser);
 
-        // Инициализируем контекст и страницу для текущего потока
-        contextThreadLocal.set(browserThreadLocal.get().newContext());
-        pageThreadLocal.set(contextThreadLocal.get().newPage());
+        // Создаем изолированный контекст и страницу для текущего потока
+        BrowserContext context = browser.newContext();
+        contextThreadLocal.set(context);
 
-        // Увеличим дефолтный таймаут до 30 секунд, чтобы нивелировать тормоза серверов GitHub Actions
-        getPage().setDefaultTimeout(30000);
+        Page localPage = context.newPage();
+        localPage.setDefaultTimeout(30000);
+        pageThreadLocal.set(localPage);
+
+        // Сохраняем ссылку в protected переменную для обратной совместимости с тестами
+        this.page = localPage;
 
         String usernameParam = System.getProperty("test.username", "standard_user");
         String passwordParam = System.getProperty("test.password", "secret_sauce");
 
-        // --- РЕФАКТОРИНГ ПО POM ---
-        LoginPage loginPage = new LoginPage(getPage());
-        loginPage.navigate(); // Открываем сайт
-        loginPage.login(usernameParam, passwordParam); // Логинимся
+        // Авторизация выполняется изолированно в каждом потоке
+        LoginPage loginPage = new LoginPage(this.page);
+        loginPage.navigate();
+        loginPage.login(usernameParam, passwordParam);
 
         try {
-            getPage().waitForURL("**/inventory.html", new Page.WaitForURLOptions().setTimeout(10000));
+            this.page.waitForURL("**/inventory.html", new Page.WaitForURLOptions().setTimeout(10000));
         } catch (PlaywrightException e) {
-            System.err.println("ОШИБКА: Не удалось авторизоваться в потоке " + Thread.currentThread().getName() + "! Текущий URL: " + getPage().url());
+            System.err.println("ОШИБКА: Не удалось авторизоваться в потоке " + Thread.currentThread().getName() + "! Текущий URL: " + this.page.url());
             throw e;
         }
     }
 
     @AfterEach
     void tearDown() {
-        // Закрываем все ресурсы строго в обратном порядке и чистим ThreadLocal для предотвращения утечек памяти
-        if (pageThreadLocal.get() != null) {
-            pageThreadLocal.get().close();
-            pageThreadLocal.remove();
-        }
-        if (contextThreadLocal.get() != null) {
-            contextThreadLocal.get().close();
-            contextThreadLocal.remove();
-        }
-        if (browserThreadLocal.get() != null) {
-            browserThreadLocal.get().close();
-            browserThreadLocal.remove();
-        }
-        if (playwrightThreadLocal.get() != null) {
-            playwrightThreadLocal.get().close();
-            playwrightThreadLocal.remove();
-        }
+        // Аккуратно закрываем ресурсы текущего потока и очищаем ThreadLocal переменные
+        Page localPage = pageThreadLocal.get();
+        if (localPage != null) localPage.close();
+
+        BrowserContext localContext = contextThreadLocal.get();
+        if (localContext != null) localContext.close();
+
+        Browser localBrowser = browserThreadLocal.get();
+        if (localBrowser != null) localBrowser.close();
+
+        Playwright localPlaywright = playwrightThreadLocal.get();
+        if (localPlaywright != null) localPlaywright.close();
+
+        // Удаляем значения из памяти, чтобы избежать утечек памяти (Memory Leaks)
+        pageThreadLocal.remove();
+        contextThreadLocal.remove();
+        browserThreadLocal.remove();
+        playwrightThreadLocal.remove();
     }
 }
