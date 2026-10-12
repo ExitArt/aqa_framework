@@ -130,6 +130,20 @@
             <version>3.45.1</version>
         </dependency>
 
+        <!-- REST Assured для тестирования API и HTTP запросов -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>5.5.0</version>
+        </dependency>
+
+        <!-- Интеграция REST Assured с Jackson для поддержки Java 23 объектов -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>json-path</artifactId>
+            <version>5.5.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>
