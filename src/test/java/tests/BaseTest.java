@@ -1,9 +1,12 @@
 package tests;
 
 import com.microsoft.playwright.*;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import saucedemo.pages.LoginPage;
+import steps.DbSteps;
+
 import java.util.Collections;
 
 public class BaseTest {
@@ -16,8 +19,19 @@ public class BaseTest {
     // Удобные геттеры, чтобы тесты могли обращаться к page напрямую, как и раньше
     protected Page page;
 
+    // Создаем бд
+    private static final DbSteps db = new DbSteps();
+
+    // Создаст таблицу в пустом GitHub Actions или пропустит шаг
+    @BeforeAll
+    static void initDatabaseStructure(){
+        db.createOrdersTable();
+    }
+
     @BeforeEach
     void setUp() {
+        // Стираем старые строки с помощью trancate
+        db.clearOrdersTable();
         // Инициализируем Playwright строго для текущего потока
         Playwright playwright = Playwright.create();
         playwrightThreadLocal.set(playwright);

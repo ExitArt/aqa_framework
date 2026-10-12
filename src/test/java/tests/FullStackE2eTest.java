@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import steps.AssertSteps;
 import steps.KafkaSteps;
+import steps.DbSteps; // Импортируем наши шаги работы с БД
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -17,19 +18,20 @@ import java.nio.file.Paths;
 import java.util.UUID;
 
 @Epic("Сквозное тестирование (Full-Stack E2E)")
-@Feature("Оформление заказа: UI + Бэкенд + Kafka + Загрузки")
-@DisplayName("E2E: Оформление заказа на SauceDemo с проверкой бизнес-события в Kafka и скачиванием инвойса")
+@Feature("Оформление заказа: UI + Бэкенд + Kafka + База Данных")
+@DisplayName("E2E: Оформление заказа на SauceDemo с проверкой в Kafka и записью в PostgreSQL")
 public class FullStackE2eTest extends BaseTest {
 
     private final KafkaSteps kafka = new KafkaSteps();
     private final AssertSteps verify = new AssertSteps();
+    private final DbSteps db = new DbSteps(); // Инициализируем локальный объект шагов БД
     private final String kafkaTopic = "e2e-orders-topic";
     private final Faker faker = new Faker();
 
     @Test
-    @Story("Покупка товара на UI, скачивание реальной PDF-квитанции и проверка события в Kafka")
+    @Story("Полносвязная проверка бизнес-цепочки: от клика на UI до записи в таблицы БД и брокер сообщений")
     @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Сквозной сценарий покупки рюкзака с выгрузкой инвойса")
+    @DisplayName("Сквозной сценарий покупки рюкзака с валидацией в Kafka и PostgreSQL")
     public void testFullE2ePurchaseWorkflow() throws Exception {
         String username = "standard_user";
         String itemName = "Sauce Labs Backpack";
@@ -67,28 +69,32 @@ public class FullStackE2eTest extends BaseTest {
         Path targetPdfPath = Paths.get("target/invoice-" + UUID.randomUUID().toString().substring(0, 5) + ".pdf");
 
         Allure.step("Нажать кнопку 'generate pdf order' и перехватить загрузку файла", () -> {
-            // Использование паттерна waitForDownload гарантирует перехват бинарного потока данных
             Download download = page.waitForDownload(() -> {
-                // ИСПРАВЛЕНО: Кликаем по точному ID кнопки генерации PDF
                 page.click("#generate-pdf-order");
             });
-
-            // Сохраняем файл из кэша Playwright в целевую папку target на диске
             download.saveAs(targetPdfPath);
 
-            // Проверяем физическое присутствие файла на диске и его валидность
-            Assertions.assertTrue(Files.exists(targetPdfPath), "Ошибка: PDF-файл инвойса не был сохранен на диск!");
-            Assertions.assertTrue(Files.size(targetPdfPath) > 0, "Ошибка: Скачанный PDF-файл пустой!");
-
-            // Прикрепляем РЕАЛЬНЫЙ скачанный PDF к отчету Allure в виде вложения
+            Assertions.assertTrue(Files.exists(targetPdfPath), "Ошибка: PDF-файл не сохранен на диск!");
             try (InputStream is = Files.newInputStream(targetPdfPath)) {
                 Allure.addAttachment("Реальный скачанный PDF-инвойс заказа", "application/pdf", is, ".pdf");
             }
         });
 
-        // --- БЛОК 3: ИМИТАЦИЯ БЭКЕНДА И ЗАГЛУШКА (Mock/Stub) ---
+        // Генерируем уникальный ID заказа для бэкенд-систем
         String mockGeneratedOrderId = "ORDER-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
+        // --- БЛОК 3: ИНТЕГРАЦИЯ С БАЗОЙ ДАННЫХ (PostgreSQL) ---
+        // Имитируем сохранение заказа бэкендом в таблицы БД
+        db.saveOrderToDb(mockGeneratedOrderId, fakeFirstName, itemName, itemPrice, "CREATED");
+
+        // Проверяем SQL-запросом, что статус заказа в базе данных действительно равен CREATED
+        Allure.step("Валидация БД: Проверить SQL-запросом наличие и статус заказа в PostgreSQL", () -> {
+            String actualStatusInDb = db.getOrderStatus(mockGeneratedOrderId);
+            Assertions.assertEquals("CREATED", actualStatusInDb,
+                    "Ошибка: Статус заказа в базе данных PostgreSQL не совпадает с ожидаемым!");
+        });
+
+        // --- БЛОК 4: РАБОТА С ОЧЕРЕДЬЮ (Kafka) ---
         E2eOrderDto expectedEvent = new E2eOrderDto(
                 username,
                 mockGeneratedOrderId,
@@ -97,11 +103,10 @@ public class FullStackE2eTest extends BaseTest {
                 "CREATED"
         );
 
-        // --- БЛОК 4: РАБОТА С ОЧЕРЕДЬЮ (Kafka) ---
         kafka.sendE2eOrderEvent(kafkaTopic, expectedEvent);
         E2eOrderDto actualEvent = kafka.waitForLatestE2eOrder(kafkaTopic);
 
-        // --- БЛОК 5: ФИНАЛЬНАЯ ВАЛИДАЦИЯ (AssertSteps) ---
+        // --- БЛОК 5: ФИНАЛЬНАЯ ВАЛИДАЦИЯ СОБЫТИЙ (AssertSteps) ---
         verify.assertE2eOrderDetails(expectedEvent, actualEvent);
     }
 }

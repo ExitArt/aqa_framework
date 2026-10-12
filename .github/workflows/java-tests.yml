@@ -77,6 +77,21 @@ jobs:
           KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
           KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
 
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        # ИСПРАВЛЕНО: В облаке берем секреты из защищенного хранилища репозитория GitHub Secrets
+        env:
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -109,6 +124,10 @@ jobs:
           -Dtest.username="${{ github.event.inputs.username || 'standard_user' }}" \
           -Dtest.password="${{ github.event.inputs.password || 'secret_sauce' }}" \
           ${{ github.event.inputs.test_tags != '' && format('-Dtest="{0}"', github.event.inputs.test_tags) || '' }}
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
       # Сохраняем логи и сырые результаты тестов в артефакты GitHub ВСЕГДА
       - name: Upload Test Report Artifacts
