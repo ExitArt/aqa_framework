@@ -108,7 +108,7 @@ jobs:
       - name: Wait for Kafka to be ready
         run: sleep 3
 
-      # ШАГ 1: Запуск чистых тестов (логи будут короткими и аккуратными)
+      # ШАГ 1: Запуск чистых тестов (логи будут короткими)
       - name: Run Tests with Maven
         run: |
           mvn test -B -ntp \
@@ -147,24 +147,24 @@ jobs:
           ref: gh-pages
           path: allure-history
 
-      # ШАГ 3: ИСПРАВЛЕНО — Переносим файлы истории строго в target/allure-results (согласно твоему pom.xml!)
+      # ШАГ 3: Переносим файлы истории строго в target/allure-results/history
       - name: Move history to target
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: |
           mkdir -p target/allure-results/history
           cp -r allure-history/history/* target/allure-results/history/ || true
 
-      # ШАГ 4: Генерируем отчет через родную команду (выполнится при любом статусе тестов благодаря if: always())
+      # ШАГ 4: Генерируем отчет через report-fork (выполнится при любом статусе тестов благодаря if: always())
       - name: Generate Allure Report via Maven
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        run: mvn allure:report -Dallure.install.dir=${{ github.workspace }}/.allure || true
+        run: mvn allure:report-fork -Dallure.install.dir=${{ github.workspace }}/.allure || true
 
-      # ШАГ 5: Публикуем готовый сайт на GitHub Pages из твоей родной папки allure-maven-plugin
+      # ШАГ 5: Публикуем готовый сайт на GitHub Pages строго из папки твоего артефакта SuaceDemo
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: target/site/allure-maven-plugin
+          publish_dir: target/site/SuaceDemo # ИСПРАВЛЕНО: Указан точный путь на основе artifactId твоего pom.xml
           force_orphan: true
