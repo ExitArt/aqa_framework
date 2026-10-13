@@ -1,11 +1,10 @@
 name: Java Playwright UI Tests (SauceDemo)
+
 on:
   push:
-  # Пайплайн запускается при пуше в вообще любую ветку
-  pull_request:
-  # Пайплайн проверяет пулл-реквесты из любых веток
+    branches: [ "main", "dev_branch" ]
+
   workflow_dispatch:
-    # Кнопка ручного запуска в интерфейсе GitHub доступна всегда
     inputs:
       browser:
         description: 'Выберите браузер'
@@ -15,7 +14,6 @@ on:
         options:
           - chromium
           - firefox
-
       headless:
         description: 'Запустить в скрытом режиме (Headless)?'
         required: true
@@ -24,13 +22,11 @@ on:
         options:
           - 'true'
           - 'false'
-
       test_tags:
         description: 'Фильтр тестов (Имя класса или паттерн. Пусто = ВСЕ. Примеры: LoginTest, *Smoke*)'
         required: false
         default: ''
         type: string
-
       username:
         description: 'Имя пользователя (Login)'
         required: true
@@ -44,15 +40,9 @@ on:
           - 'error_user'
           - 'visual_user'
 
-      password:
-        description: 'Пароль (Password)'
-        required: true
-        default: 'secret_sauce'
-        type: password
-
 permissions:
   checks: write
-  contents: write # Нужен доступ для записи отчетов на gh-pages
+  contents: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -61,7 +51,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    # ПОЧИНЕНО: Поднимаем чистую официальную Kafka 3.7.0 (KRaft) в контейнере GitHub Actions
     services:
       kafka:
         image: apache/kafka:3.7.0
@@ -81,7 +70,6 @@ jobs:
         image: postgres:16-alpine
         ports:
           - 5432:5432
-        # ИСПРАВЛЕНО: В облаке берем секреты из защищенного хранилища репозитория GitHub Secrets
         env:
           POSTGRES_DB: ${{ secrets.DB_NAME }}
           POSTGRES_USER: ${{ secrets.DB_USER }}
@@ -91,8 +79,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-          
-      # ДОБАВЛЯЕМ СЮДА: Автономный WireMock для облачного пайплайна
+
       wiremock:
         image: wiremock/wiremock:3.9.1-alpine
         ports:
@@ -118,7 +105,6 @@ jobs:
       - name: Install Playwright Operating System Dependencies
         run: mvn exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install-deps"
 
-      # ПОЧИНЕНО: Даем облачной Кафке 3 секунды, чтобы полностью инициализировать метаданные и порты
       - name: Wait for Kafka to be ready
         run: sleep 3
 
@@ -128,14 +114,13 @@ jobs:
           -Dchosen.browser="${{ github.event.inputs.browser || 'chromium' }}" \
           -Dchosen.headless="${{ github.event.inputs.headless || 'true' }}" \
           -Dtest.username="${{ github.event.inputs.username || 'standard_user' }}" \
-          -Dtest.password="${{ github.event.inputs.password || 'secret_sauce' }}" \
+          -Dtest.password="${{ secrets.SITE_PASSWORD }}" \
           ${{ github.event.inputs.test_tags != '' && format('-Dtest="{0}"', github.event.inputs.test_tags) || '' }}
         env:
           DB_URL: jdbc:postgresql://localhost:5432/${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
-      # Сохраняем логи и сырые результаты тестов в артефакты GitHub ВСЕГДА
       - name: Upload Test Report Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -152,9 +137,6 @@ jobs:
           detailed_summary: true
           include_passed: true
 
-      # --- НИЖЕ ЛОГИКА ОГРАНИЧЕНИЯ ДЛЯ ВЕТКИ MAIN ---
-
-      # 1. Скачиваем историю прошлых запусков во ВРЕМЕННУЮ папку allure-history
       - name: Get Allure history
         uses: actions/checkout@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
@@ -163,33 +145,21 @@ jobs:
           ref: gh-pages
           path: allure-history
 
-      # 2. Переносим ТОЛЬКО чистые файлы истории (без скрытой папки .git) в папку Мавена
       - name: Move history to target
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: |
           mkdir -p target/allure-results/history
           cp -r allure-history/history/* target/allure-results/history/ || true
 
-      # 3. Собираем Allure отчет в готовый сайт ТОЛЬКО для main branch
       - name: Generate Allure Report via Maven
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: mvn allure:report -Dallure.install.dir=${{ github.workspace }}/.allure || true
 
-      # 4. ОТЛАДКА: Проверяем реальное имя папки отчета в директории target/site/
-      - name: Debug and List Target Directory
-        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        run: |
-          echo "=== Проверяем содержимое папки target ==="
-          ls -la target/ || true
-          echo "=== Проверяем содержимое папки target/site ==="
-          ls -la target/site/ || true
-
-      # 5. Публикуем сайт на GitHub Pages из ПРАВИЛЬНОЙ папки allure-report
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: target/site/allure-report # ИСПРАВЛЕНО: Изменили дефолтный путь на стандартный allure-report
+          publish_dir: target/site/allure-maven-plugin
           force_orphan: true
