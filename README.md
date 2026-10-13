@@ -118,8 +118,5 @@ mvn clean test -Dtest.password=secret_sauce
 ### Примеры Allure-отчетов с артефактами
 > 💡 *Благодаря Playwright Download API и Allure Lifecycle, к отчетам автоматически прикрепляются реальные скачанные PDF-инвойсы.*
 
-#### 1. Общий дашборд сборки (Слитый параллельный прогон UI + API + DDT):
-![Allure Dashboard](https://githubusercontent.com)
-
-#### 2. Пример параметризованного прогона (DDT из JSON) с фиксацией бага на упавшем тесте:
-![Allure DDT Failure](https://githubusercontent.com)
+#### Общий дашборд сборки (Слитый параллельный прогон UI + API + DDT):
+![Allure Dashboard](https://exitart.github.io/aqa_framework/)
