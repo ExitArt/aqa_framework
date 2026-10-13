@@ -175,12 +175,21 @@ jobs:
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: mvn allure:report -Dallure.install.dir=${{ github.workspace }}/.allure || true
 
-      # 4. Публикуем сайт на GitHub Pages
+      # 4. ОТЛАДКА: Проверяем реальное имя папки отчета в директории target/site/
+      - name: Debug and List Target Directory
+        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        run: |
+          echo "=== Проверяем содержимое папки target ==="
+          ls -la target/ || true
+          echo "=== Проверяем содержимое папки target/site ==="
+          ls -la target/site/ || true
+
+      # 5. Публикуем сайт на GitHub Pages из ПРАВИЛЬНОЙ папки allure-report
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: target/site/allure-maven-plugin
-          force_orphan: true # ИСПРАВЛЕНО: стирает старые конфликты Git и принудительно обновляет сайт
+          publish_dir: target/site/allure-report # ИСПРАВЛЕНО: Изменили дефолтный путь на стандартный allure-report
+          force_orphan: true
