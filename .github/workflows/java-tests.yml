@@ -2,7 +2,9 @@ name: Java Playwright UI Tests (SauceDemo)
 
 on:
   push:
-    branches: [ "main" ] # Настроено строго на твою рабочую ветку main
+    branches: [ "main", "dev_branch" ] # Настроено строго на твою рабочую ветку main
+    paths-ignore:
+      - 'README.md'
 
   workflow_dispatch:
     inputs:
