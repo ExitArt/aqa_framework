@@ -108,7 +108,7 @@ jobs:
       - name: Wait for Kafka to be ready
         run: sleep 3
 
-      # ШАГ 1: Запуск чистых тестов (логи будут короткими)
+      # ШАГ 1: Запуск чистых тестов (результаты лягут в target/allure-results)
       - name: Run Tests with Maven
         run: |
           mvn test -B -ntp \
@@ -147,24 +147,26 @@ jobs:
           ref: gh-pages
           path: allure-history
 
-      # ШАГ 3: Переносим файлы истории строго в target/allure-results/history
+      # ШАГ 3: Переносим файлы истории строго в твою папку target/allure-results/history
       - name: Move history to target
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: |
           mkdir -p target/allure-results/history
           cp -r allure-history/history/* target/allure-results/history/ || true
 
-      # ШАГ 4: Генерируем отчет через report-fork (выполнится при любом статусе тестов благодаря if: always())
-      - name: Generate Allure Report via Maven
+      # ШАГ 4: Генерируем отчет нативно через твой встроенный allure-2.29.0 (минуя плагины мавена)
+      - name: Generate Allure Report via Embedded CLI
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        run: mvn allure:report-fork -Dallure.install.dir=${{ github.workspace }}/.allure || true
+        run: |
+          chmod +x allure-2.29.0/bin/allure
+          ./allure-2.29.0/bin/allure generate target/allure-results --clean -o target/allure-report
 
-      # ШАГ 5: Публикуем готовый сайт на GitHub Pages строго из папки твоего артефакта SuaceDemo
+      # ШАГ 5: Публикуем готовый сайт на GitHub Pages из гарантированно созданной папки target/allure-report
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: target/site/SuaceDemo # ИСПРАВЛЕНО: Указан точный путь на основе artifactId твоего pom.xml
+          publish_dir: target/allure-report
           force_orphan: true
