@@ -5,6 +5,7 @@ import io.qameta.allure.*;
 import models.E2eOrderDto;
 import models.TestDataUser;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -30,9 +31,14 @@ public class DataDrivenE2eTest extends BaseTest {
     private final DbSteps db = new DbSteps();
     private final String kafkaTopic = "ddt-orders-topic";
 
-    // Метод-поставщик данных для JUnit 5 из нашего JsonReader
     static List<TestDataUser> userProvider() {
         return JsonReader.getUsersData();
+    }
+
+    @BeforeEach
+    public void cleanUpWireMock() {
+        // Очищаем таблицы перед каждым прогоном (метод унаследован из BaseTest)
+        db.clearOrdersTable();
     }
 
     @ParameterizedTest(name = "Прогон E2E для пользователя: {0}")
@@ -49,28 +55,22 @@ public class DataDrivenE2eTest extends BaseTest {
         String itemName = "Sauce Labs Backpack";
         String itemPrice = "$29.99";
 
-        // ДОБАВЛЯЕМ СЮДА: Сбрасываем старую дефолтную сессию standard_user, чтобы вернуться на форму логина
+        // --- БЛОК 0: СБРОС СЕССИИ И ВОЗВРАТ НА ФОРМУ ВХОДА ---
         Allure.step("Очистить куки и вернуться на страницу авторизации", () -> {
             String currentBaseUrl = page.url();
-            // Очищаем контекст браузера (стирает куки и сессию стандартного юзера из BaseTest)
             page.context().clearCookies();
-            // Принудительно переходим на главный URL формы логина
             page.navigate(currentBaseUrl);
         });
 
         // --- БЛОК 1: ДИНАМИЧЕСКАЯ АВТОРИЗАЦИЯ НА UI ---
         Allure.step("Авторизоваться на сайте под пользователем: " + username, () -> {
-            // Вытаскиваем пароль СТРОГО из системы без дефолтных текстовых строк в коде
             String systemPassword = System.getProperty("test.password");
-
             if (systemPassword == null || systemPassword.isBlank()) {
                 throw new IllegalStateException("КРИТИЧЕСКАЯ ОШИБКА: Пароль сайта 'test.password' не передан в систему!");
             }
-
             page.fill("[data-test='username']", username);
             page.fill("[data-test='password']", systemPassword);
             page.click("[data-test='login-button']");
-
             page.waitForURL("**/inventory.html");
         });
 
@@ -88,6 +88,23 @@ public class DataDrivenE2eTest extends BaseTest {
             page.click("[data-test='continue']");
         });
 
+        // --- КРИТИЧЕСКИЙ БЛОК: ОБРАБОТКА ОЖИДАЕМОГО БАГА ДЛЯ PROBLEM_USER ---
+        if (username.equals("problem_user")) {
+            Allure.step("Негативный тест: Проверить ожидаемый баг формы SauceDemo для problem_user", () -> {
+                // Из-за бага на сайте под этим юзером форма НЕ переходит дальше и мы остаемся на шаге 'checkout-step-one'
+                String currentUrl = page.url();
+                Assertions.assertTrue(currentUrl.contains("checkout-step-one.html"),
+                        "Ожидаемый дефект сайта пропал! Кнопка Continue перевела пользователя дальше.");
+
+                // Логируем в Allure, что баг успешно воспроизведен и подтвержден
+                Allure.addAttachment("Статус дефекта", "text/plain",
+                        "Ожидаемый баг формы успешно зафиксирован. Тест завершен со статусом PASSED.");
+            });
+            // Мягко и успешно выходим из теста, так как ожидаемый баг подтвержден!
+            return;
+        }
+
+        // --- ПОДПИСЬ: ЭТОТ КОД ВЫПОЛНИТСЯ ТОЛЬКО ДЛЯ STANDARD И GLITCH ЮЗЕРОВ ---
         Allure.step("Проверить детали заказа на финальном UI экране перед подтверждением", () -> {
             Assertions.assertTrue(page.locator(".inventory_item_name").textContent().contains(itemName));
             Assertions.assertTrue(page.locator(".summary_subtotal_label").textContent().contains(itemPrice));
@@ -100,7 +117,6 @@ public class DataDrivenE2eTest extends BaseTest {
 
         // --- БЛОК 3: РЕАЛЬНОЕ СКАЧИВАНИЕ PDF ---
         Path targetPdfPath = Paths.get("target/invoice-ddt-" + UUID.randomUUID().toString().substring(0, 5) + ".pdf");
-
         Allure.step("Нажать кнопку 'generate pdf order' и перехватить загрузку файла", () -> {
             Download download = page.waitForDownload(() -> {
                 page.click("#generate-pdf-order");
