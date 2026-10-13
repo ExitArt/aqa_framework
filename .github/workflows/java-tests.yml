@@ -107,7 +107,7 @@ jobs:
         run: mvn exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install-deps"
 
       - name: Wait for Kafka to be ready
-        run: sleep 3
+        run: sleep 10
 
       # ШАГ 1: Запуск только чистых тестов (результаты сочно ложатся в target/allure-results)
       - name: Run Tests with Maven
