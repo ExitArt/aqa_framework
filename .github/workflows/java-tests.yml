@@ -107,7 +107,7 @@ jobs:
       - name: Wait for Kafka to be ready
         run: sleep 3
 
-      # ШАГ 1: Запуск только чистых тестов (логи теперь будут короткими)
+      # ШАГ 1: Запуск только чистых тестов (результаты сочно ложатся в target/allure-results)
       - name: Run Tests with Maven
         run: |
           mvn test -B -ntp \
@@ -146,24 +146,24 @@ jobs:
           ref: gh-pages
           path: allure-history
 
-      # 2. Переносим чистые файлы истории в папку allure-results (JUnit складывает результаты в корень проекта)
+      # 2. ИСПРАВЛЕНО: Переносим чистые файлы истории строго в target/allure-results/history, где лежат твои тесты!
       - name: Move history to results
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: |
-          mkdir -p allure-results/history
-          cp -r allure-history/history/* allure-results/history/ || true
+          mkdir -p target/allure-results/history
+          cp -r allure-history/history/* target/allure-results/history/ || true
 
-      # 3. Нативно устанавливаем официальный Allure CLI через npm (это никогда не дает сбоев по сети)
+      # 3. Нативно устанавливаем официальный Allure CLI через npm
       - name: Install Allure CLI
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: npm install -g allure-commandline --save-dev
 
-      # 4. Железно генерируем готовый HTML-сайт из папки allure-results в папку allure-report
+      # 4. ИСПРАВЛЕНО: Генерируем готовый HTML-сайт из ПРАВИЛЬНОЙ наполненной папки target/allure-results
       - name: Generate Allure Report via CLI
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: allure generate target/allure-results --clean -o allure-report
 
-      # 5. Публикуем готовый сайт на GitHub Pages с сохранением всей истории коммитов (БЕЗ force_orphan)
+      # 5. Публикуем готовый сайт на GitHub Pages с сохранением всей истории коммитов (БЕЗ force_orphan, как ты просил)
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
