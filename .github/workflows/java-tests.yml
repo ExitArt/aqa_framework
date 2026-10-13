@@ -108,7 +108,7 @@ jobs:
       - name: Wait for Kafka to be ready
         run: sleep 3
 
-      # ШАГ 1: Запуск только чистых тестов (логи теперь будут короткими)
+      # ШАГ 1: Запуск чистых тестов (логи будут аккуратными)
       - name: Run Tests with Maven
         run: |
           mvn test -B -ntp \
@@ -138,7 +138,7 @@ jobs:
           detailed_summary: true
           include_passed: true
 
-      # 1. Скачиваем историю прошлых запусков во временную папку allure-history
+      # ШАГ 2: Скачиваем историю прошлых запусков во временную папку allure-history
       - name: Get Allure history
         uses: actions/checkout@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
@@ -147,29 +147,24 @@ jobs:
           ref: gh-pages
           path: allure-history
 
-      # 2. Переносим чистые файлы истории в папку allure-results (JUnit складывает результаты в корень проекта)
-      - name: Move history to results
+      # ШАГ 3: Переносим чистые файлы истории в папку target/allure-results/history
+      - name: Move history to target
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: |
-          mkdir -p allure-results/history
-          cp -r allure-history/history/* allure-results/history/ || true
+          mkdir -p target/allure-results/history
+          cp -r allure-history/history/* target/allure-results/history/ || true
 
-      # 3. Нативно устанавливаем официальный Allure CLI через npm (это никогда не дает сбоев по сети)
-      - name: Install Allure CLI
+      # ШАГ 4: Генерируем наполненный отчет через report-fork (выполнится при любом статусе тестов)
+      - name: Generate Allure Report via Maven
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        run: npm install -g allure-commandline --save-dev
+        run: mvn allure:report-fork -Dallure.install.dir=${{ github.workspace }}/.allure || true
 
-      # 4. Железно генерируем готовый HTML-сайт из папки allure-results в папку allure-report
-      - name: Generate Allure Report via CLI
-        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        run: allure generate allure-results --clean -o allure-report
-
-      # 5. Публикуем готовый сайт на GitHub Pages из гарантированно созданной папки allure-report
+      # ШАГ 5: Публикуем готовый сайт на GitHub Pages из твоей родной папки allure-maven-plugin
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: allure-report # Перенаправили на чистую, созданную через CLI папку отчета
+          publish_dir: target/site/allure-maven-plugin
           force_orphan: true
