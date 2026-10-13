@@ -213,8 +213,11 @@
                 <configuration>
                     <reportVersion>${allure.version}</reportVersion>
                     <resultsDirectory>${project.build.directory}/allure-results</resultsDirectory>
+                    <!-- ДОБАВЬ ЭТУ СТРОЧКУ СЮДА: Жестко заставляем плагин сохранять отчет в target/allure-report -->
+                    <reportDirectory>${project.build.directory}/allure-report</reportDirectory>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 </project>

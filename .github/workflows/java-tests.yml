@@ -146,9 +146,8 @@ jobs:
       # ШАГ 3: Публикуем готовый сайт на GitHub Pages строго по твоему пути target/allure-report
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
-        if: always()
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: target/allure-report # ОСТАВЛЕН СТРОГО ЭТОТ ПУТЬ
+          publish_dir: target/allure-report # Указывает экшену искать папку в target/allure-report
           force_orphan: true
