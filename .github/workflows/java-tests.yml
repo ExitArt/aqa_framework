@@ -91,6 +91,12 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+          
+      # ДОБАВЛЯЕМ СЮДА: Автономный WireMock для облачного пайплайна
+      wiremock:
+        image: wiremock/wiremock:3.9.1-alpine
+        ports:
+          - 8080:8080
 
     steps:
       - name: Checkout code

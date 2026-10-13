@@ -144,6 +144,13 @@
             <version>5.5.0</version>
         </dependency>
 
+        <!-- WireMock Standalone -->
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock-standalone</artifactId>
+            <version>3.9.1</version>
+        </dependency>
+
     </dependencies>
 
     <build>

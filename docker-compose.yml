@@ -27,3 +27,11 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+  wiremock:
+    image: wiremock/wiremock:3.9.1-alpine
+    container_name: wiremock_server
+    ports:
+      - "8080:8080" # Открываем порт 8080. Теперь ты СМОЖЕШЬ зайти в браузере на http://localhost:8080/__admin
+    volumes:
+      - ./wiremock:/home/wiremock # Папка wiremock создастся у тебя в проекте для хранения JSON-заглушек
