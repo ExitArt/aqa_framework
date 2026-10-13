@@ -1,0 +1,20 @@
+[
+  {
+    "username": "standard_user",
+    "firstName": "Alex",
+    "lastName": "Petrov",
+    "zipCode": "123456"
+  },
+  {
+    "username": "problem_user",
+    "firstName": "John",
+    "lastName": "Smith",
+    "zipCode": "654321"
+  },
+  {
+    "username": "performance_glitch_user",
+    "firstName": "Olga",
+    "lastName": "Ivanova",
+    "zipCode": "987654"
+  }
+]

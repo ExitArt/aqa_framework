@@ -52,8 +52,9 @@ public class DbSteps {
         );
     }
 
-    @Step("БД: Полностью очистить таблицу заказов")
+    @Step("БД: Полностью очистить таблицу заказов и сбросить автоинкремент ID")
     public void clearOrdersTable() {
-        jdbi.useHandle(handle -> handle.execute("TRUNCATE TABLE orders"));
+        // Добавили RESTART IDENTITY — теперь при каждом прогоне ID снова начнётся с 1!
+        jdbi.useHandle(handle -> handle.execute("TRUNCATE TABLE orders RESTART IDENTITY"));
     }
 }

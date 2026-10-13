@@ -1,0 +1,1 @@
+{"uuid":"bdb97316-a5c5-4460-8c03-526b19bb414a","name":"DDT: Полный цикл покупки рюкзака через UI, DB и Kafka","children":["be9df0d0-9d0f-4a3c-a6f4-efb3f55104df","23325301-2915-4d28-88bf-829c118bec4c","ab0bd2c7-337c-406a-ab62-6d510aed5ad0"],"befores":[],"afters":[],"start":1791886591324,"stop":1791886626896}
