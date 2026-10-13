@@ -108,31 +108,14 @@ jobs:
       - name: Wait for Kafka to be ready
         run: sleep 3
 
-      # 1. Скачиваем историю прошлых запусков во ВРЕМЕННУЮ папку allure-history ДО запуска тестов
-      - name: Get Allure history
-        uses: actions/checkout@v4
-        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        continue-on-error: true
-        with:
-          ref: gh-pages
-          path: allure-history
-
-      # 2. Переносим чистые файлы истории в папку Мавена ДО старта тестов для корректных графиков трендов
-      - name: Move history to target
-        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      # ШАГ 1: Запуск только чистых тестов (логи теперь будут короткими)
+      - name: Run Tests with Maven
         run: |
-          mkdir -p target/allure-results/history
-          cp -r allure-history/history/* target/allure-results/history/ || true
-
-      # 3. Запускаем тесты и СРАЗУ ЖЕ генерируем отчет в рамках одного жизненного цикла Maven
-      - name: Run Tests and Generate Allure Report with Maven
-        run: |
-          mvn test allure:report -B -ntp \
+          mvn test -B -ntp \
           -Dchosen.browser="${{ github.event.inputs.browser || 'chromium' }}" \
           -Dchosen.headless="${{ github.event.inputs.headless || 'true' }}" \
           -Dtest.username="${{ github.event.inputs.username || 'standard_user' }}" \
           -Dtest.password="${{ secrets.SITE_PASSWORD }}" \
-          -Dallure.install.dir=${{ github.workspace }}/.allure \
           ${{ github.event.inputs.test_tags != '' && format('-Dtest="{0}"', github.event.inputs.test_tags) || '' }}
         env:
           DB_URL: jdbc:postgresql://localhost:5432/${{ secrets.DB_NAME }}
@@ -155,7 +138,27 @@ jobs:
           detailed_summary: true
           include_passed: true
 
-      # 4. Деплоим готовый, гарантированно собранный Мавеном сайт на GitHub Pages
+      # ШАГ 2: Подгрузка истории Allure ПОСЛЕ прогона тестов
+      - name: Get Allure history
+        uses: actions/checkout@v4
+        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: allure-history
+
+      - name: Move history to target
+        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        run: |
+          mkdir -p target/allure-results/history
+          cp -r allure-history/history/* target/allure-results/history/ || true
+
+      # ШАГ 3: Генерация отчета на отдельном шаге с if: always()
+      - name: Generate Allure Report via Maven
+        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        run: mvn allure:report -Dallure.install.dir=${{ github.workspace }}/.allure || true
+
+      # ШАГ 4: Деплой отчета на GitHub Pages
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
