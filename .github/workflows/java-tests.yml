@@ -108,7 +108,7 @@ jobs:
       - name: Wait for Kafka to be ready
         run: sleep 3
 
-      # ШАГ 1: Прогон чистых тестов (результаты сочно лягут в твою папку target/allure-results)
+      # ШАГ 1: Прогон чистых тестов (сырые результаты лягут в target/allure-results)
       - name: Run Tests with Maven
         run: |
           mvn test -B -ntp \
@@ -138,18 +138,18 @@ jobs:
           detailed_summary: true
           include_passed: true
 
-      # ШАГ 2: Нативно собираем отчет из твоей папки target/allure-results (выполнится в любом случае)
+      # ШАГ 2: Собираем отчет из твоей реальной папки target/allure-results (компилирует в target/allure-report)
       - name: Generate Allure Report via Maven
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: mvn allure:report-fork -Dallure.install.dir=${{ github.workspace }}/.allure || true
 
-      # ШАГ 3: Публикуем готовый сайт на GitHub Pages из РЕАЛЬНОЙ папки твоего проекта SauceDemo
+      # ШАГ 3: Публикуем готовый сайт на GitHub Pages строго из твоей реальной папки target/allure-report
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          # ИСПРАВЛЕНО: Указан точный абсолютный путь к папке, создаваемой твоим pom.xml
-          publish_dir: ${{ github.workspace }}/target/site/SauceDemo
+          # ИСПРАВЛЕНО: Задали железобетонный абсолютный путь к твоей реальной папке отчета target/allure-report
+          publish_dir: ${{ github.workspace }}/target/allure-report
           force_orphan: true

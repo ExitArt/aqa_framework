@@ -1,0 +1,1 @@
+{"uuid":"6e6def55-b3b8-4ac7-8905-ae5963c209c3","name":"E2E: Оформление заказа на SauceDemo с проверкой в Kafka и записью в PostgreSQL","children":["a326d325-fc93-4e7b-897f-e7014c3afc5f"],"befores":[],"afters":[],"start":1791900105264,"stop":1791900114100}
