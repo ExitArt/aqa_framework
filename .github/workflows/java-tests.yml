@@ -154,21 +154,28 @@ jobs:
 
       # --- НИЖЕ ЛОГИКА ОГРАНИЧЕНИЯ ДЛЯ ВЕТКИ MAIN ---
 
-      # Скачиваем историю прошлых запусков ТОЛЬКО для main branch
+      # 1. Скачиваем историю прошлых запусков во ВРЕМЕННУЮ папку allure-history
       - name: Get Allure history
         uses: actions/checkout@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         continue-on-error: true
         with:
           ref: gh-pages
-          path: target/allure-results/history
+          path: allure-history
 
-      # Собираем Allure отчет в готовый сайт ТОЛЬКО для main branch
+      # 2. Переносим ТОЛЬКО чистые файлы истории (без скрытой папки .git) в папку Мавена
+      - name: Move history to target
+        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        run: |
+          mkdir -p target/allure-results/history
+          cp -r allure-history/history/* target/allure-results/history/ || true
+
+      # 3. Собираем Allure отчет в готовый сайт ТОЛЬКО для main branch
       - name: Generate Allure Report via Maven
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: mvn allure:report -Dallure.install.dir=${{ github.workspace }}/.allure || true
 
-      # Публикуем сайт на GitHub Pages ТОЛЬКО для main branch
+      # 4. Публикуем сайт на GitHub Pages
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
@@ -176,3 +183,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: target/site/allure-maven-plugin
+          force_orphan: true # ИСПРАВЛЕНО: стирает старые конфликты Git и принудительно обновляет сайт
