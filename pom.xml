@@ -213,8 +213,6 @@
                 <configuration>
                     <reportVersion>${allure.version}</reportVersion>
                     <resultsDirectory>${project.build.directory}/allure-results</resultsDirectory>
-                    <!-- ДОБАВЛЯЕМ СЮДА: Скачивание движка напрямую со стабильного зеркала GitHub -->
-                    <allureDownloadUrl>https://github.com</allureDownloadUrl>
                 </configuration>
             </plugin>
         </plugins>
