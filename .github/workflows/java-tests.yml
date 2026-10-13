@@ -108,7 +108,7 @@ jobs:
       - name: Wait for Kafka to be ready
         run: sleep 3
 
-      # ШАГ 1: Прогон чистых тестов (результаты лягут в target/allure-results)
+      # ШАГ 1: Запуск чистых тестов (результаты лягут в target/allure-results)
       - name: Run Tests with Maven
         run: |
           mvn test -B -ntp \
@@ -138,33 +138,17 @@ jobs:
           detailed_summary: true
           include_passed: true
 
-      # ШАГ 2: Скачиваем историю прошлых запусков из gh-pages во временную папку
-      - name: Get Allure history
-        uses: actions/checkout@v4
-        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        continue-on-error: true
-        with:
-          ref: gh-pages
-          path: allure-history
-
-      # ШАГ 3: Переносим файлы истории строго в target/allure-results/history согласно твоему pom.xml
-      - name: Move history to target
-        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        run: |
-          mkdir -p target/allure-results/history
-          cp -r allure-history/history/* target/allure-results/history/ || true
-
-      # ШАГ 4: Нативно собираем отчет из target/allure-results (выполнится при любом статусе тестов благодаря if: always())
+      # ШАГ 2: Собираем отчет из РЕАЛЬНОЙ папки target/allure-results (выполнится при любом статусе тестов благодаря if: always())
       - name: Generate Allure Report via Maven
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: mvn allure:report-fork -Dallure.install.dir=${{ github.workspace }}/.allure || true
 
-      # ШАГ 5: Публикуем готовый сайт на GitHub Pages СТРОГО из правильной Linux-папки проекта SauceDemo
+      # ШАГ 3: Публикуем готовый сайт на GitHub Pages строго из папки target/allure-report
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: target/site/SauceDemo # ИСПРАВЛЕНО: Полностью корректное написание с сохранением регистра PascalCase
+          publish_dir: target/allure-report # Твой чистый дефолтный путь генерации отчета
           force_orphan: true
