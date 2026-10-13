@@ -119,4 +119,4 @@ mvn clean test -Dtest.password=secret_sauce
 > 💡 *Благодаря Playwright Download API и Allure Lifecycle, к отчетам автоматически прикрепляются реальные скачанные PDF-инвойсы.*
 
 #### Общий дашборд сборки (Слитый параллельный прогон UI + API + DDT):
-![Allure Dashboard](https://exitart.github.io/aqa_framework/)
+[Allure Dashboard](https://exitart.github.io/aqa_framework/)
