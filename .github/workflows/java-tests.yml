@@ -143,13 +143,13 @@ jobs:
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: mvn allure:report-fork -Dallure.install.dir=${{ github.workspace }}/.allure || true
 
-      # ШАГ 3: Публикуем готовый сайт на GitHub Pages строго по АБСОЛЮТНОМУ пути твоей папки target/allure-report
+      # ШАГ 3: Публикуем готовый сайт на GitHub Pages из РЕАЛЬНОЙ папки твоего проекта SauceDemo
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          # ИСПРАВЛЕНО: Задали чистый абсолютный путь к твоей реальной папке отчета target/allure-report
-          publish_dir: ${{ github.workspace }}/target/allure-report
+          # ИСПРАВЛЕНО: Указан точный абсолютный путь к папке, создаваемой твоим pom.xml
+          publish_dir: ${{ github.workspace }}/target/site/SauceDemo
           force_orphan: true
