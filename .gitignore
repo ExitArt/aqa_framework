@@ -3,6 +3,8 @@
 
 # Log file
 *.log
+close
+cls
 
 # BlueJ files
 *.ctxt
@@ -10,7 +12,8 @@
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
-# Package Files #
+# Package Files and dirs#
+target/
 *.jar
 *.war
 *.nar
@@ -23,4 +26,15 @@
 hs_err_pid*
 replay_pid*
 
+# config data
 .env
+
+# Allure Reports and local instruments
+.allure/
+allurre-results/
+allure-report/
+
+# development environment
+.idea/
+*.iml
+*.iws
