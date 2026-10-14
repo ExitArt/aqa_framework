@@ -82,7 +82,7 @@ public class FullStackE2eTest extends BaseTest {
 
         // Генерируем уникальный ID заказа для бэкенд-систем
         // БЫЛО: String mockGeneratedOrderId = "ORDER-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        String mockGeneratedOrderId = "ORD-UI-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().toUpperCase();
+        String mockGeneratedOrderId = "ORD-UI-" + (System.currentTimeMillis() / 1000) + "-" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
 
 
         // --- БЛОК 3: ИНТЕГРАЦИЯ С БАЗОЙ ДАННЫХ (PostgreSQL) ---
