@@ -1,6 +1,6 @@
 {
-  "user" : "performance_glitch_user",
-  "orderId" : "ORDER-DDT-F97F0DBC",
+  "user" : "standard_user",
+  "orderId" : "ORDER-DDT-64C6EE43",
   "item" : "Sauce Labs Backpack",
   "price" : "$29.99",
   "status" : "CREATED"
