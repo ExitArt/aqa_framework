@@ -28,18 +28,18 @@ public class DataDrivenE2eTest extends BaseTest {
 
     private final KafkaSteps kafka = new KafkaSteps();
     private final AssertSteps verify = new AssertSteps();
-    private final DbSteps db = new DbSteps();
+    //private final DbSteps db = new DbSteps();
     private final String kafkaTopic = "ddt-orders-topic";
 
     static List<TestDataUser> userProvider() {
         return JsonReader.getUsersData();
     }
 
-    @BeforeEach
-    public void cleanUpWireMock() {
-        // Очищаем таблицы перед каждым прогоном (метод унаследован из BaseTest)
-        db.clearOrdersTable();
-    }
+//    @BeforeEach
+//    public void cleanUpWireMock() {
+//        // Очищаем таблицы перед каждым прогоном (метод унаследован из BaseTest)
+//        db.clearOrdersTable();
+//    }
 
     @ParameterizedTest(name = "Прогон E2E для пользователя: {0}")
     @MethodSource("userProvider")
@@ -128,7 +128,7 @@ public class DataDrivenE2eTest extends BaseTest {
             }
         });
 
-        String mockGeneratedOrderId = "ORDER-DDT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String mockGeneratedOrderId = "ORD-DDT-" + (System.currentTimeMillis() / 1000) + "-" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
 
         // --- БЛОК 4: ИНТЕГРАЦИЯ С БАЗОЙ ДАННЫХ (PostgreSQL) ---
         db.saveOrderToDb(mockGeneratedOrderId, firstName, itemName, itemPrice, "CREATED");
