@@ -26,12 +26,11 @@ public class BaseTest {
     @BeforeAll
     static void initDatabaseStructure(){
         db.createOrdersTable();
+        db.clearOrdersTable();
     }
 
     @BeforeEach
     void setUp() {
-        // Стираем старые строки с помощью trancate
-        db.clearOrdersTable();
         // Инициализируем Playwright строго для текущего потока
         Playwright playwright = Playwright.create();
         playwrightThreadLocal.set(playwright);

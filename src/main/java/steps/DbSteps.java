@@ -41,15 +41,26 @@ public class DbSteps {
         ));
     }
 
-    @Step("БД: Получить статус заказа из базы по его orderId: {0}")
+    @Step("БД: Получить статус заказа из базы по его orderId: {0} (с ожиданием)")
     public String getOrderStatus(String orderId) {
-        return jdbi.withHandle(handle -> handle.createQuery(
-                        "SELECT status FROM orders WHERE order_id = :orderId")
-                .bind("orderId", orderId)
-                .mapTo(String.class)
-                .findFirst()
-                .orElse("NOT_FOUND")
-        );
+        try {
+            // Ждем до 5 секунд, опрашивая базу каждые 500 миллисекунд
+            return org.awaitility.Awaitility.await()
+                    .atMost(5, java.util.concurrent.TimeUnit.SECONDS)
+                    .pollInterval(500, java.util.concurrent.TimeUnit.MILLISECONDS)
+                    .until(
+                            () -> jdbi.withHandle(handle -> handle.createQuery(
+                                            "SELECT status FROM orders WHERE order_id = :orderId")
+                                    .bind("orderId", orderId)
+                                    .mapTo(String.class)
+                                    .findFirst()
+                                    .orElse("NOT_FOUND")),
+                            status -> !"NOT_FOUND".equals(status)
+                    );
+        } catch (org.awaitility.core.ConditionTimeoutException e) {
+            // Если за 5 секунд запись так и не появилась, возвращаем NOT_FOUND для проверки в Assert
+            return "NOT_FOUND";
+        }
     }
 
     @Step("БД: Полностью очистить таблицу заказов и сбросить автоинкремент ID")
