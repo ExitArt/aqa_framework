@@ -17,7 +17,7 @@ public class ProductsPage {
     private final Locator productImages;         // Для CheckUniqProductsTest
     private final Locator inventoryItems;        // Для InventoryTest
 
-    // 2. Инициализируем их строго в конструкторе
+    // 2. Инициализируем их в конструкторе
     public ProductsPage(Page page) {
         this.page = page;
         this.logo = page.locator(".app_logo");

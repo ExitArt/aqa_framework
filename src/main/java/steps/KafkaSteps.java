@@ -75,7 +75,7 @@ public class KafkaSteps {
         }
     }
 
-    // Добавили параметр String groupId, чтобы разделить потоки чтения
+    // Добавил параметр String groupId, чтобы разделить потоки чтения
     private String getLatestMessageWithAwait(String topic, String groupId) {
         KafkaUtils consumer = new KafkaUtils(bootstrapServers, groupId);
 

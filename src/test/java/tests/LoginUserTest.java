@@ -12,7 +12,7 @@ public class LoginUserTest extends BaseTest {
         // Инициализируем Page Object для страницы продуктов
         ProductsPage productsPage = new ProductsPage(page);
 
-        // Чистые проверки без локаторов внутри теста!
+        // Чистые проверки без локаторов внутри теста
         assertThat(productsPage.getLogo()).hasText("Swag Labs");
         assertThat(productsPage.getTitle()).hasText("Products");
 

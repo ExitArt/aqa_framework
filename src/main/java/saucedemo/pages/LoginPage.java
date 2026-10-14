@@ -22,7 +22,7 @@ public class LoginPage {
 
     // 3. Бизнес-логика: открытие страницы и авторизация
     public void navigate() {
-        // ИСПРАВЛЕНО: Вместо NETWORKIDLE используем LOAD для мгновенного прохода шага
+        // Вместо NETWORKIDLE используем LOAD для мгновенного прохода шага
         page.navigate("https://www.saucedemo.com", new Page.NavigateOptions().setWaitUntil(WaitUntilState.LOAD));
     }
 

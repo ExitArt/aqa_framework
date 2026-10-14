@@ -16,11 +16,11 @@ public class CheckUniqProductsTest extends BaseTest {
         // Инициализируем Page Object
         ProductsPage productsPage = new ProductsPage(page);
 
-        // 1. Ожидаем появление элементов с помощью умных ассертов Playwright
+        // Ожидаем появление элементов с помощью умных ассертов Playwright
         assertThat(productsPage.getProductNamesLocator()).hasCount(6);
         assertThat(productsPage.getProductImagesLocator()).hasCount(6);
 
-        // 2. ПРОВЕРКА НАЗВАНИЙ ТОВАРОВ
+        // ПРОВЕРКА НАЗВАНИЙ ТОВАРОВ
         List<String> allProductNames = productsPage.getAllProductNames();
         System.out.println("Найдено товаров на странице: " + allProductNames.size());
 
@@ -31,7 +31,7 @@ public class CheckUniqProductsTest extends BaseTest {
                 "Обнаружены дубликаты среди карточек товаров! Список товаров: " + allProductNames
         );
 
-        // 3. ПРОВЕРКА КАРТИНОК ТОВАРОВ
+        // ПРОВЕРКА КАРТИНОК ТОВАРОВ
         List<String> allImagesSource = productsPage.getAllProductImagesSources();
         System.out.println("Search pictures on page: " + allImagesSource.size());
 

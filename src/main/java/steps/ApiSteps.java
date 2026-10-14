@@ -12,7 +12,7 @@ import models.E2eOrderDto;
 
 public class ApiSteps {
 
-    // Спецификация запроса настраивается под наш фреймворк
+    // Спецификация запроса настраивается под фреймворк
     private final RequestSpecification requestSpec = new RequestSpecBuilder()
             .setContentType(ContentType.JSON)
             .log(LogDetail.ALL)
@@ -24,19 +24,19 @@ public class ApiSteps {
 
     @Step("API: Отправить POST-запрос на создание заказа в систему")
     public E2eOrderDto createOrderViaApi(String endpointUrl, E2eOrderDto orderPayload) {
-        // Мы используем встроенный в REST Assured сериализатор,
-        // который автоматически превратит наш Java-объект E2eOrderDto в JSON-строку
+        // используем встроенный в REST Assured сериализатор,
+        // который автоматически превратит Java-объект E2eOrderDto в JSON-строку
         return RestAssured.given()
                 .spec(requestSpec)
                 .body(orderPayload)
                 .when()
-                // Так как реального эндпоинта SauceDemo нет, мы отправляем запрос на заглушку (Mock),
+                // Так как реального эндпоинта SauceDemo нет, отправляем запрос на заглушку (Mock),
                 // либо тестируем локальную отправку данных
                 .post(endpointUrl)
                 .then()
                 .spec(responseSpec)
                 // На реальном проекте тут будет проверка .statusCode(201)
                 .extract()
-                .as(E2eOrderDto.class); // Автоматически превращает JSON-ответ обратно в Java-объект!
+                .as(E2eOrderDto.class); // Автоматически превращает JSON-ответ обратно в Java-объект
     }
 }

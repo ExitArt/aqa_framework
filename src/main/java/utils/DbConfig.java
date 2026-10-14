@@ -28,7 +28,7 @@ public class DbConfig {
         }
     }
 
-    // Жесткий метод получения секретов: никакого хардкода внутри!
+    // Жесткий метод получения секретов
     private static String getRequiredEnv(String key) {
         // Сначала ищем в памяти (из файла .env)
         if (envMap.containsKey(key)) {

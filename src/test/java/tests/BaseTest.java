@@ -16,7 +16,7 @@ public class BaseTest {
     private static final ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
     private static final ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>();
 
-    // Удобные геттеры, чтобы тесты могли обращаться к page напрямую, как и раньше
+    // Удобные геттеры, чтобы тесты могли обращаться к page напрямую
     protected Page page;
 
     // Создаем бд

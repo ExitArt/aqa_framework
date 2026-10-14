@@ -6,7 +6,7 @@ import utils.DbConfig;
 
 public class DbSteps {
 
-    // Инициализируем JDBI через наш конфигуратор секретов
+    // Инициализируем JDBI через конфигуратор секретов
     private final Jdbi jdbi = Jdbi.create(
             DbConfig.getUrl(),
             DbConfig.getUser(),
@@ -54,7 +54,7 @@ public class DbSteps {
 
     @Step("БД: Полностью очистить таблицу заказов и сбросить автоинкремент ID")
     public void clearOrdersTable() {
-        // Добавили RESTART IDENTITY — теперь при каждом прогоне ID снова начнётся с 1!
+        // RESTART IDENTITY, при каждом прогоне ID снова начнётся с 1
         jdbi.useHandle(handle -> handle.execute("TRUNCATE TABLE orders RESTART IDENTITY"));
     }
 }

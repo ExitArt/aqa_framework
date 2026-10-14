@@ -32,7 +32,7 @@ public class ApiTest extends BaseTest {
     public void cleanUpWireMock() {
         // Очищаем контейнер WireMock перед каждым тестом, чтобы правила не накапливались
         wm.resetWireMock();
-        // ПРИМЕЧАНИЕ: Поскольку мы теперь наследуемся от BaseTest, JUnit 5 автоматически
+        // Поскольку мы теперь наследуемся от BaseTest, JUnit 5 автоматически
         // вызовет и этот метод, и метод setUp() из BaseTest (который очистит таблицы БД и запустит браузер).
     }
 
@@ -55,7 +55,7 @@ public class ApiTest extends BaseTest {
                 "CREATED"
         );
 
-        // 2. БЛОК РАБОТЫ С БД (PostgreSQL)
+        // БЛОК РАБОТЫ С БД (PostgreSQL)
         // Имитируем, что наш API-сервис при получении запроса сохраняет данные в базу
         db.saveOrderToDb(mockOrderId, username, itemName, itemPrice, "CREATED");
 
@@ -64,7 +64,7 @@ public class ApiTest extends BaseTest {
             Assertions.assertEquals("CREATED", statusInDb, "Ошибка: Заказ не найден в БД!");
         });
 
-        // 3. БЛОК РАБОТЫ С ОЧЕРЕДЬЮ (Kafka)
+        // БЛОК РАБОТЫ С ОЧЕРЕДЬЮ (Kafka)
         // Имитируем, что бэкенд после записи в БД шлет событие в шину данных для других систем
         kafka.sendE2eOrderEvent(kafkaTopic, orderPayload);
         E2eOrderDto kafkaEvent = kafka.waitForLatestE2eOrder(kafkaTopic);
@@ -81,15 +81,15 @@ public class ApiTest extends BaseTest {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("API: Тестирование контрактов заказа с использованием WireMock в Docker")
     public void testWireMockStubAndMock() {
-        // 1. ПОДГОТОВКА ДАННЫХ
+        // ПОДГОТОВКА ДАННЫХ
         String fakeItemName = faker.commerce().productName(); // Случайный товар
         String mockOrderId = "ORD-WM-" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
 
-        // 2. НАСТРОЙКА STUB (Заглушки)
+        // НАСТРОЙКА STUB (Заглушки)
         // Шлём команду WireMock-контейнеру: "Если прилетит POST на /api/v1/orders с этим товаром — верни 201"
         wm.stubCreateOrder(mockOrderId, fakeItemName);
 
-        // 3. ОТПРАВКА РЕАЛЬНОГО ЗАПРОСА ЧЕРЕЗ REST ASSURED
+        // ОТПРАВКА РЕАЛЬНОГО ЗАПРОСА ЧЕРЕЗ REST ASSURED
         Map<String, Object> requestPayload = Map.of(
                 "item", fakeItemName,
                 "quantity", 1
@@ -115,7 +115,7 @@ public class ApiTest extends BaseTest {
                     "Ошибка: Заглушка вернула некорректный статус заказа!");
         });
 
-        // 4. MOCK-ВЕРИФИКАЦИЯ (Проверка поведения бэкенда)
+        // MOCK-ВЕРИФИКАЦИЯ (Проверка поведения бэкенда)
         // Проверяем у контейнера: действительно ли к нему прилетал ровно 1 корректный запрос
         wm.verifyOrderWasSent(fakeItemName);
     }

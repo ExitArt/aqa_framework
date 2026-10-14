@@ -10,7 +10,7 @@ public class InventoryTest extends BaseTest {
     public void shouldHaveItemsInStore() {
         ProductsPage productsPage = new ProductsPage(page);
 
-        // Мы заранее знаем требования бизнеса: на SauceDemo ВСЕГДА должно быть 6 товаров
+        // Мы заранее знаем требования: на SauceDemo ВСЕГДА должно быть 6 товаров
         int expectedItemsCount = 6;
 
         // Playwright будет ждать до 5 секунд, пока страница догрузится и карточек станет ровно 6
