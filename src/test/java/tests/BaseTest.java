@@ -20,7 +20,7 @@ public class BaseTest {
     protected Page page;
 
     // Создаем бд
-    private static final DbSteps db = new DbSteps();
+    protected static final DbSteps db = new DbSteps();
 
     // Создаст таблицу в пустом GitHub Actions или пропустит шаг
     @BeforeAll

@@ -24,7 +24,7 @@ public class FullStackE2eTest extends BaseTest {
 
     private final KafkaSteps kafka = new KafkaSteps();
     private final AssertSteps verify = new AssertSteps();
-    private final DbSteps db = new DbSteps(); // Инициализируем локальный объект шагов БД
+    //private final DbSteps db = new DbSteps(); // Инициализируем локальный объект шагов БД
     private final String kafkaTopic = "e2e-orders-topic";
     private final Faker faker = new Faker();
 
