@@ -81,7 +81,9 @@ public class FullStackE2eTest extends BaseTest {
         });
 
         // Генерируем уникальный ID заказа для бэкенд-систем
-        String mockGeneratedOrderId = "ORDER-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        // БЫЛО: String mockGeneratedOrderId = "ORDER-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String mockGeneratedOrderId = "ORD-UI-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().toUpperCase();
+
 
         // --- БЛОК 3: ИНТЕГРАЦИЯ С БАЗОЙ ДАННЫХ (PostgreSQL) ---
         // Имитируем сохранение заказа бэкендом в таблицы БД

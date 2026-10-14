@@ -45,7 +45,9 @@ public class ApiTest extends BaseTest {
         String username = "standard_user";
         String itemName = faker.commerce().productName(); // Случайный товар (например, "Деревянный стул")
         String itemPrice = "$" + faker.commerce().price();
-        String mockOrderId = "ORDER-API-" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
+        // БЫЛО: String mockOrderId = "ORDER-API-" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
+        String mockOrderId = "ORD-API-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().toUpperCase();
+
 
         E2eOrderDto orderPayload = new E2eOrderDto(
                 username,
