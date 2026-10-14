@@ -6,7 +6,7 @@ import utils.DbConfig;
 
 public class DbSteps {
 
-    // Инициализируем JDBI через конфигуратор секретов
+    // Инициализируем JDBI через наш конфигуратор секретов
     private final Jdbi jdbi = Jdbi.create(
             DbConfig.getUrl(),
             DbConfig.getUser(),
@@ -33,7 +33,7 @@ public class DbSteps {
 
     @Step("БД: Записать новый заказ {1} в таблицу orders")
     public void saveOrderToDb(String orderId, String username, String itemName, String price, String status) {
-        jdbi.useHandle(handle -> handle.execute(
+        jdbi.useTransaction(handle -> handle.execute(
                 "INSERT INTO orders (order_id, username, item_name, price, status) " +
                         "VALUES (?, ?, ?, ?, ?) " +
                         "ON CONFLICT (order_id) DO UPDATE SET status = EXCLUDED.status",
@@ -44,28 +44,27 @@ public class DbSteps {
     @Step("БД: Получить статус заказа из базы по его orderId: {0} (с ожиданием)")
     public String getOrderStatus(String orderId) {
         try {
-            // Ждем до 5 секунд, опрашивая базу каждые 500 миллисекунд
+            // Используем Awaitility (она у тебя подключена в pom.xml)
             return org.awaitility.Awaitility.await()
                     .atMost(5, java.util.concurrent.TimeUnit.SECONDS)
                     .pollInterval(500, java.util.concurrent.TimeUnit.MILLISECONDS)
                     .until(
                             () -> jdbi.withHandle(handle -> handle.createQuery(
-                                            "SELECT status FROM orders WHERE order_id = :orderId")
-                                    .bind("orderId", orderId)
+                                            "SELECT status FROM orders WHERE order_id = ?") // ИСПРАВЛЕНО: заменили именованный параметр на "?"
+                                    .bind(0, orderId) // ИСПРАВЛЕНО: привязка по индексу 0
                                     .mapTo(String.class)
                                     .findFirst()
                                     .orElse("NOT_FOUND")),
                             status -> !"NOT_FOUND".equals(status)
                     );
         } catch (org.awaitility.core.ConditionTimeoutException e) {
-            // Если за 5 секунд запись так и не появилась, возвращаем NOT_FOUND для проверки в Assert
             return "NOT_FOUND";
         }
     }
 
     @Step("БД: Полностью очистить таблицу заказов и сбросить автоинкремент ID")
     public void clearOrdersTable() {
-        // RESTART IDENTITY, при каждом прогоне ID снова начнётся с 1
+        // Добавили RESTART IDENTITY — теперь при каждом прогоне ID снова начнётся с 1!
         jdbi.useHandle(handle -> handle.execute("TRUNCATE TABLE orders RESTART IDENTITY"));
     }
 }

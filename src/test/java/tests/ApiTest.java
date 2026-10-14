@@ -22,7 +22,7 @@ import java.util.UUID;
 public class ApiTest extends BaseTest {
 
     private final ApiSteps api = new ApiSteps();
-    private final DbSteps db = new DbSteps();
+    //private final DbSteps db = new DbSteps();
     private final KafkaSteps kafka = new KafkaSteps();
     private final WireMockSteps wm = new WireMockSteps(); // Инициализация шагов WireMock
     private final Faker faker = new Faker();

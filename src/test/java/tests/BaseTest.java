@@ -20,11 +20,11 @@ public class BaseTest {
     protected Page page;
 
     // Создаем бд
-    private static final DbSteps db = new DbSteps();
+    protected static final DbSteps db = new DbSteps();
 
     // Создаст таблицу в пустом GitHub Actions или пропустит шаг
     @BeforeAll
-    static void initDatabaseStructure(){
+    static synchronized void initDatabaseStructure(){
         db.createOrdersTable();
         db.clearOrdersTable();
     }
