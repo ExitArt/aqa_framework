@@ -119,6 +119,7 @@ jobs:
           -Dtest.password="${{ secrets.SITE_PASSWORD }}" \
           ${{ github.event.inputs.test_tags != '' && format('-Dtest="{0}"', github.event.inputs.test_tags) || '' }}
         env:
+          DB_NAME: ${{ secrets.DB_NAME }}
           DB_URL: jdbc:postgresql://localhost:5432/${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
