@@ -44,20 +44,17 @@ public class DbSteps {
     @Step("БД: Получить статус заказа из базы по его orderId: {0} (с ожиданием)")
     public String getOrderStatus(String orderId) {
         try {
+            // Используем Awaitility (она у тебя подключена в pom.xml)
             return org.awaitility.Awaitility.await()
-                    .atMost(7, java.util.concurrent.TimeUnit.SECONDS) // Увеличим до 7 секунд для CI
+                    .atMost(5, java.util.concurrent.TimeUnit.SECONDS)
                     .pollInterval(500, java.util.concurrent.TimeUnit.MILLISECONDS)
                     .until(
-                            () -> {
-                                String res = jdbi.withHandle(handle -> handle.createQuery(
-                                                "SELECT status FROM orders WHERE order_id = :orderId")
-                                        .bind("orderId", orderId)
-                                        .mapTo(String.class)
-                                        .findFirst()
-                                        .orElse("NOT_FOUND"));
-                                System.out.println("[DB DEBUG] Поиск заказа " + orderId + ", результат: " + res);
-                                return res;
-                            },
+                            () -> jdbi.withHandle(handle -> handle.createQuery(
+                                            "SELECT status FROM orders WHERE order_id = ?") // ИСПРАВЛЕНО: заменили именованный параметр на "?"
+                                    .bind(0, orderId) // ИСПРАВЛЕНО: привязка по индексу 0
+                                    .mapTo(String.class)
+                                    .findFirst()
+                                    .orElse("NOT_FOUND")),
                             status -> !"NOT_FOUND".equals(status)
                     );
         } catch (org.awaitility.core.ConditionTimeoutException e) {
