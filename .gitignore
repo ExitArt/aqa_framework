@@ -38,3 +38,7 @@ allure-report/
 .idea/
 *.iml
 *.iws
+
+# GitLab локальные данные
+gitlab-data/
+gitlab-runner-config/

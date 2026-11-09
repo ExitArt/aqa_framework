@@ -1,0 +1,62 @@
+image: mcr.microsoft.com/playwright:v1.52.0-noble
+
+stages:
+  - test
+  - report
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  # Переопределяем адреса подключения — в CI используем алиасы сервисов, а не localhost
+  DB_HOST: ${{ secrets.DB_NAME }}
+  DB_PORT: "5432"
+  KAFKA_BOOTSTRAP_SERVERS: "localhost:9092"
+
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .m2/repository/
+
+test:
+  stage: test
+  services:
+    - name: postgres:16-alpine
+      alias: postgres
+      variables:
+        POSTGRES_DB: ${{ secrets.DB_NAME }}
+        POSTGRES_USER: ${{ secrets.DB_USER }}
+        POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+    - name: apache/kafka:3.7.0
+      alias: kafka
+      variables:
+        KAFKA_NODE_ID: 1
+        KAFKA_PROCESS_ROLES: broker,controller
+        KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+        KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+        KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+        KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+  script:
+    # Ждём готовности PostgreSQL (сервисы стартуют параллельно с задачей)
+    - apt-get update && apt-get install -y postgresql-client
+    - until pg_isready -h postgres -p 5432; do sleep 1; done
+    - mvn test
+  artifacts:
+    when: always
+    paths:
+      - target/allure-results/
+    expire_in: 14 days
+
+report:
+  stage: report
+  image: maven:3.9-eclipse-temurin-17
+  needs:
+    - job: test
+      artifacts: true
+  script:
+    - mvn allure:report
+  artifacts:
+    paths:
+      - target/site/allure-maven-plugin/
+    expire_in: 14 days
+  when: always

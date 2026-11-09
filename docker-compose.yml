@@ -35,3 +35,26 @@ services:
       - "8080:8080" # Открываем порт 8080. Теперь ты СМОЖЕШЬ зайти в браузере на http://localhost:8080/__admin
     volumes:
       - ./wiremock:/home/wiremock # Папка wiremock создастся у тебя в проекте для хранения JSON-заглушек
+
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: gitlab-ce
+    restart: always
+    hostname: localhost
+    ports:
+      - "8093:80"
+      - "2222:22"
+    volumes:
+      - ./gitlab-data/config:/etc/gitlab
+      - ./gitlab-data/logs:/var/log/gitlab
+      - ./gitlab-data/data:/var/opt/gitlab
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    restart: always
+    volumes:
+      - ./gitlab-runner-config:/etc/gitlab-runner
+      - //var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - gitlab
